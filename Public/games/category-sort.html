@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LernSpiel — Category Sort</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+
+        <div id="view-loading" class="view active" style="align-items: center; justify-content: center;">
+            <div class="text-muted">Lade Spiel...</div>
+        </div>
+
+        <!-- GAME VIEW -->
+        <div id="view-game" class="view">
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <span class="text-muted text-sm" id="question-counter">0 / 0</span>
+                <span class="badge badge-accent" id="score-badge">0 Punkte</span>
+            </div>
+            <div class="timer" id="timer">60</div>
+
+            <div class="question-text" id="question-text" style="font-size: 1.1rem; margin-bottom: 16px;"></div>
+
+            <!-- Current word to sort -->
+            <div id="current-word" class="category-current-word"></div>
+
+            <!-- Category buttons -->
+            <div class="category-grid" id="category-grid"></div>
+
+            <div id="feedback-area" style="text-align: center; min-height: 48px; margin-bottom: 12px;"></div>
+
+            <!-- Category bins showing sorted words -->
+            <div id="category-bins"></div>
+        </div>
+
+        <!-- RESULTS VIEW -->
+        <div id="view-results" class="view">
+            <div class="header"><h1 id="results-emoji">🎉</h1></div>
+            <div class="score-display">
+                <div class="score-number" id="final-score">0</div>
+                <div class="score-label">Punkte</div>
+                <div class="score-percent" id="final-percent">0%</div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--success);" id="result-correct">0</div>
+                    <div class="text-muted text-sm">Richtig</div>
+                </div>
+                <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--danger);" id="result-wrong">0</div>
+                    <div class="text-muted text-sm">Falsch</div>
+                </div>
+                <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                    <div style="font-weight: 700;" id="result-time">0s</div>
+                    <div class="text-muted text-sm">Zeit</div>
+                </div>
+            </div>
+            <div class="section-title">Deine Antworten</div>
+            <div id="answer-review"></div>
+            <div class="section-title mt-24">Leaderboard</div>
+            <div id="leaderboard"><div class="text-muted text-sm text-center" style="padding: 12px;">Lade...</div></div>
+            <div class="mt-24" style="display: flex; gap: 8px;">
+                <button class="btn btn-primary" onclick="location.reload()" style="flex: 1;">Nochmal spielen</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/hub.html'" style="flex: 1;">Zurück zum Hub</button>
+            </div>
+        </div>
+
+        <!-- ERROR VIEW -->
+        <div id="view-error" class="view" style="align-items: center; justify-content: center;">
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 12px;">😕</div>
+                <div id="error-message" style="color: var(--danger); margin-bottom: 16px;"></div>
+                <button class="btn btn-secondary" onclick="window.location.href='/hub.html'">Zurück zum Hub</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js?v=4"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/game-engine.js"></script>
+    <script>
+        if (!Auth.requireLogin()) {}
+
+        let categories = [];
+        let allWords = [];
+        let currentWordIndex = 0;
+        let sortedWords = {}; // category -> [words]
+
+        const engine = new GameEngine({
+            onBuildReview(answers) {
+                document.getElementById('answer-review').innerHTML = answers.map(a => {
+                    const icon = a.correct ? '✅' : '❌';
+                    return `<div class="result-item">
+                        <span><span class="icon">${icon}</span> "${GameEngine.escapeHTML(a.word)}" → ${GameEngine.escapeHTML(a.givenCategory)}</span>
+                        ${!a.correct ? `<span class="text-muted text-sm">Richtig: ${GameEngine.escapeHTML(a.correctCategory)}</span>` : ''}
+                    </div>`;
+                }).join('');
+            }
+        });
+
+        async function init() {
+            const gm = await engine.init();
+            if (!gm) return;
+
+            categories = gm.config.categories || [];
+            if (categories.length === 0) { engine.showError('Keine Kategorien vorhanden.'); return; }
+
+            const settings = gm.config.settings || {};
+
+            // Flatten all words with their correct category
+            allWords = [];
+            categories.forEach(cat => {
+                (cat.words || []).forEach(w => {
+                    allWords.push({ word: w, category: cat.name });
+                });
+                sortedWords[cat.name] = [];
+            });
+
+            allWords = GameEngine.shuffleArray(allWords);
+
+            engine.totalItems = allWords.length;
+            engine.maxScore = allWords.length * (settings.pointsPerCorrect || 10);
+
+            // Render category buttons
+            document.getElementById('question-text').textContent = gm.config.prompt || 'Sortiere die Wörter in die richtige Kategorie:';
+            renderCategoryButtons();
+            renderBins();
+
+            engine.showView('view-game');
+            showWord();
+
+            const timeLimit = settings.timeLimit || 60;
+            engine.startTimer(timeLimit, () => {
+                // Mark remaining as wrong
+                for (let i = currentWordIndex; i < allWords.length; i++) {
+                    engine.wrongCount++;
+                    engine.answers.push({ word: allWords[i].word, givenCategory: '(Zeit)', correctCategory: allWords[i].category, correct: false, timeTaken: 0 });
+                }
+                engine.finishGame();
+            });
+        }
+
+        function renderCategoryButtons() {
+            const grid = document.getElementById('category-grid');
+            const cols = categories.length <= 2 ? 2 : categories.length <= 3 ? 3 : 2;
+            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            grid.innerHTML = '';
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-secondary category-btn';
+                btn.textContent = cat.name;
+                btn.addEventListener('click', () => sortWord(cat.name));
+                grid.appendChild(btn);
+            });
+        }
+
+        function renderBins() {
+            const bins = document.getElementById('category-bins');
+            bins.innerHTML = '';
+            categories.forEach((cat, i) => {
+                const div = document.createElement('div');
+                div.className = 'category-bin';
+                div.innerHTML = `<div class="category-bin-title">${GameEngine.escapeHTML(cat.name)}</div>
+                    <div class="category-bin-words" id="bin-cat-${i}"></div>`;
+                bins.appendChild(div);
+            });
+        }
+
+        function showWord() {
+            if (currentWordIndex >= allWords.length) { engine.finishGame(); return; }
+
+            engine.updateProgress(currentWordIndex, allWords.length);
+            document.getElementById('question-counter').textContent = `${currentWordIndex + 1} / ${allWords.length}`;
+
+            const word = allWords[currentWordIndex];
+            document.getElementById('current-word').textContent = word.word;
+            document.getElementById('current-word').className = 'category-current-word';
+            engine.clearFeedback();
+        }
+
+        function sortWord(categoryName) {
+            if (engine.answered && currentWordIndex >= allWords.length) return;
+
+            const word = allWords[currentWordIndex];
+            const settings = engine.gameModule.config.settings || {};
+            const isCorrect = categoryName === word.category;
+
+            const points = engine.calculatePoints(isCorrect, settings);
+            if (isCorrect) { engine.addScore(points); engine.correctCount++; }
+            else { engine.wrongCount++; }
+
+            // Visual feedback on current word
+            const wordEl = document.getElementById('current-word');
+            if (isCorrect) {
+                wordEl.classList.add('category-correct');
+            } else {
+                wordEl.classList.add('category-wrong');
+                engine.shake(wordEl);
+            }
+
+            // Add to bin
+            const catIndex = categories.findIndex(c => c.name === word.category);
+            const bin = document.getElementById(`bin-cat-${catIndex}`);
+            if (bin) {
+                bin.insertAdjacentHTML('beforeend', `<span class="chip chip-placed ${isCorrect ? '' : 'chip-wrong'}">${GameEngine.escapeHTML(word.word)}</span> `);
+            }
+
+            engine.answers.push({ word: word.word, givenCategory: categoryName, correctCategory: word.category, correct: isCorrect, timeTaken: 0 });
+
+            setTimeout(() => { currentWordIndex++; showWord(); }, isCorrect ? 400 : 1000);
+        }
+
+        init();
+    </script>
+</body>
+</html>

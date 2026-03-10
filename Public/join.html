@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LernSpiel — Anmelden</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .student-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .student-btn {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .student-btn:hover {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+        }
+
+        .student-btn:active {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+            transform: scale(0.97);
+        }
+
+        .student-btn.loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .error-box {
+            background: var(--danger-bg);
+            border: 1px solid var(--danger);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            text-align: center;
+            color: var(--danger);
+            margin-top: 20px;
+        }
+
+        .success-box {
+            background: var(--success-bg);
+            border: 1px solid var(--success);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            text-align: center;
+            color: var(--success);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 360px) {
+            .student-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <h1>LernSpiel</h1>
+            <p class="subtitle" id="subtitle">Anmeldung...</p>
+        </div>
+
+        <div id="loading" class="text-muted text-center" style="padding: 40px;">
+            Lade...
+        </div>
+
+        <div id="student-list" style="display: none;">
+            <div class="section-title">Wer bist du?</div>
+            <div class="student-grid" id="student-grid"></div>
+        </div>
+
+        <div id="error-view" style="display: none;">
+            <div class="error-box" id="error-msg"></div>
+            <div class="text-center mt-24">
+                <a href="/" style="color: var(--accent); font-size: 0.9rem;">Zur Startseite</a>
+            </div>
+        </div>
+
+        <div id="success-view" style="display: none;">
+            <div class="success-box" id="success-msg"></div>
+        </div>
+
+        <div class="spacer"></div>
+        <div class="text-center text-muted text-sm" style="padding: 16px 0;">
+            Wähle deinen Namen, um dich für diese Stunde anzumelden.
+        </div>
+    </div>
+
+    <script src="/js/api.js?v=4"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+
+        if (!code) {
+            showError('Kein Code angegeben. Bitte scanne den QR-Code erneut.');
+        } else {
+            loadJoinInfo(code);
+        }
+
+        async function loadJoinInfo(code) {
+            try {
+                const info = await API.getJoinInfo(code);
+                document.getElementById('subtitle').textContent = `Klasse ${info.klasse}`;
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('student-list').style.display = 'block';
+
+                const grid = document.getElementById('student-grid');
+                grid.innerHTML = info.students.map(s =>
+                    `<button class="student-btn" onclick="checkin('${s.id}', this)">${esc(s.name)}</button>`
+                ).join('');
+
+                if (info.students.length === 0) {
+                    grid.innerHTML = '<div class="text-muted text-center" style="grid-column: 1/-1; padding: 20px;">Keine Schüler in dieser Klasse.</div>';
+                }
+            } catch (e) {
+                showError(e.message || 'Code ungültig oder abgelaufen.');
+            }
+        }
+
+        async function checkin(playerID, btn) {
+            // Disable all buttons
+            document.querySelectorAll('.student-btn').forEach(b => b.classList.add('loading'));
+            btn.textContent = '...';
+
+            try {
+                const res = await API.checkinWithCode(code, playerID);
+
+                // Store player in session
+                Auth.setPlayer({ id: res.id, name: res.name, klasse: res.klasse });
+                Auth.setRaum(res.klasse);
+
+                // Show success briefly, then redirect
+                document.getElementById('student-list').style.display = 'none';
+                document.getElementById('success-view').style.display = 'block';
+                document.getElementById('success-msg').textContent = res.message;
+
+                setTimeout(() => {
+                    window.location.href = '/hub.html';
+                }, 800);
+            } catch (e) {
+                showError(e.message || 'Anmeldung fehlgeschlagen.');
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('student-list').style.display = 'none';
+            document.getElementById('error-view').style.display = 'block';
+            document.getElementById('error-msg').textContent = msg;
+            document.getElementById('subtitle').textContent = 'Fehler';
+        }
+
+        function esc(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>

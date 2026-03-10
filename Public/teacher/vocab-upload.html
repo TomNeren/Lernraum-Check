@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LernSpiel — Vokabeln importieren</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <h1>Vokabeln importieren</h1>
+            <p class="subtitle">Eine Vokabel pro Zeile: english | german | example</p>
+        </div>
+
+        <div class="input-group">
+            <label>Thema / Topic</label>
+            <input type="text" id="topic" placeholder="z.B. Unit 3 - Environment">
+        </div>
+
+        <div class="input-group">
+            <label>Vokabeln</label>
+            <textarea id="vocab-input" rows="12" placeholder="sustainable | nachhaltig | We need sustainable energy sources.
+environment | Umwelt | We must protect our environment.
+renewable | erneuerbar"
+                style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.9rem; resize: vertical; line-height: 1.6;"></textarea>
+        </div>
+
+        <div id="status" style="margin-bottom: 16px;"></div>
+
+        <button class="btn btn-primary" id="btn-import" onclick="importVocab()">Importieren</button>
+
+        <div class="spacer"></div>
+
+        <button class="btn btn-secondary mt-16" onclick="window.location.href='/hub.html'">Zurück zum Hub</button>
+
+    </div>
+
+    <script src="/js/api.js?v=4"></script>
+    <script>
+        async function importVocab() {
+            const topic = document.getElementById('topic').value.trim();
+            const raw = document.getElementById('vocab-input').value.trim();
+            const statusEl = document.getElementById('status');
+            const btn = document.getElementById('btn-import');
+
+            if (!raw) {
+                statusEl.innerHTML = '<span style="color: var(--danger);">Bitte Vokabeln eingeben.</span>';
+                return;
+            }
+
+            const lines = raw.split('\n').filter(l => l.trim());
+            const items = [];
+
+            for (const line of lines) {
+                const parts = line.split('|').map(s => s.trim());
+                if (parts.length < 2) continue;
+                items.push({
+                    english: parts[0],
+                    german: parts[1],
+                    example: parts[2] || null
+                });
+            }
+
+            if (items.length === 0) {
+                statusEl.innerHTML = '<span style="color: var(--danger);">Keine gültigen Vokabeln erkannt. Format: english | german | example</span>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Importiere...';
+
+            try {
+                await API.importVocab(topic || null, items);
+                statusEl.innerHTML = `<span style="color: var(--success); font-weight: 600;">${items.length} Vokabeln importiert!</span>`;
+                document.getElementById('vocab-input').value = '';
+            } catch (e) {
+                statusEl.innerHTML = `<span style="color: var(--danger);">Fehler: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Importieren';
+            }
+        }
+    </script>
+</body>
+</html>

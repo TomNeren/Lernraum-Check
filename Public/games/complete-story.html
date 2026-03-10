@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LernSpiel — Complete the Story</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+
+        <div id="view-loading" class="view active" style="align-items: center; justify-content: center;">
+            <div class="text-muted">Lade Geschichte...</div>
+        </div>
+
+        <!-- GAME VIEW -->
+        <div id="view-game" class="view">
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <span class="text-muted text-sm" id="question-counter">Story</span>
+                <span class="badge badge-accent" id="score-badge">0 Punkte</span>
+            </div>
+            <div class="timer" id="timer">60</div>
+
+            <div class="story-container" id="story-container"></div>
+
+            <div id="feedback-area" style="text-align: center; min-height: 48px; margin-bottom: 12px;"></div>
+
+            <button class="btn btn-primary" id="check-btn" onclick="checkStory()">Geschichte prüfen</button>
+        </div>
+
+        <!-- RESULTS VIEW -->
+        <div id="view-results" class="view">
+            <div class="header"><h1 id="results-emoji">🎉</h1></div>
+            <div class="score-display">
+                <div class="score-number" id="final-score">0</div>
+                <div class="score-label">Punkte</div>
+                <div class="score-percent" id="final-percent">0%</div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--success);" id="result-correct">0</div>
+                    <div class="text-muted text-sm">Richtig</div>
+                </div>
+                <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--danger);" id="result-wrong">0</div>
+                    <div class="text-muted text-sm">Falsch</div>
+                </div>
+                <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                    <div style="font-weight: 700;" id="result-time">0s</div>
+                    <div class="text-muted text-sm">Zeit</div>
+                </div>
+            </div>
+            <div class="section-title">Deine Antworten</div>
+            <div id="answer-review"></div>
+            <div class="section-title mt-24">Leaderboard</div>
+            <div id="leaderboard"><div class="text-muted text-sm text-center" style="padding: 12px;">Lade...</div></div>
+            <div class="mt-24" style="display: flex; gap: 8px;">
+                <button class="btn btn-primary" onclick="location.reload()" style="flex: 1;">Nochmal spielen</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/hub.html'" style="flex: 1;">Zurück zum Hub</button>
+            </div>
+        </div>
+
+        <!-- ERROR VIEW -->
+        <div id="view-error" class="view" style="align-items: center; justify-content: center;">
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 12px;">😕</div>
+                <div id="error-message" style="color: var(--danger); margin-bottom: 16px;"></div>
+                <button class="btn btn-secondary" onclick="window.location.href='/hub.html'">Zurück zum Hub</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js?v=4"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/game-engine.js"></script>
+    <script>
+        if (!Auth.requireLogin()) {}
+
+        let gaps = [];
+
+        const engine = new GameEngine({
+            onBuildReview(answers) {
+                document.getElementById('answer-review').innerHTML = answers.map((a) => {
+                    const icon = a.correct ? '✅' : '❌';
+                    return `<div class="result-item">
+                        <span><span class="icon">${icon}</span> Lücke ${a.gapIndex + 1}: ${GameEngine.escapeHTML(a.givenAnswer)}</span>
+                        <span class="text-muted text-sm">${a.correct ? '' : 'Richtig: ' + GameEngine.escapeHTML(a.correctAnswer)}</span>
+                    </div>`;
+                }).join('');
+            }
+        });
+
+        async function init() {
+            const gm = await engine.init();
+            if (!gm) return;
+
+            const config = gm.config;
+            gaps = config.gaps || [];
+            if (gaps.length === 0) { engine.showError('Keine Lücken in der Geschichte.'); return; }
+
+            const settings = config.settings || {};
+            engine.totalItems = gaps.length;
+            engine.maxScore = gaps.length * (settings.pointsPerCorrect || 10);
+
+            // Build story with inline dropdowns
+            let storyHTML = config.storyTemplate || '';
+            gaps.forEach((gap, i) => {
+                const options = GameEngine.shuffleArray([gap.correct, ...(gap.distractors || [])]);
+                const selectHTML = `<select class="story-select" data-gap="${i}">
+                    <option value="">-- wählen --</option>
+                    ${options.map(o => `<option value="${GameEngine.escapeHTML(o)}">${GameEngine.escapeHTML(o)}</option>`).join('')}
+                </select>`;
+                storyHTML = storyHTML.replace(`{gap${i}}`, selectHTML);
+            });
+
+            document.getElementById('story-container').innerHTML = storyHTML;
+            document.getElementById('question-counter').textContent = `${gaps.length} Lücken`;
+
+            engine.showView('view-game');
+            const timeLimit = settings.timeLimit || 60;
+            engine.startTimer(timeLimit, () => { if (!engine.answered) checkStory(); });
+        }
+
+        function checkStory() {
+            if (engine.answered) return;
+            engine.answered = true;
+            engine.stopTimer();
+
+            const settings = engine.gameModule.config.settings || {};
+
+            gaps.forEach((gap, i) => {
+                const select = document.querySelector(`[data-gap="${i}"]`);
+                const givenAnswer = select ? select.value : '';
+                const isCorrect = givenAnswer === gap.correct;
+
+                const points = engine.calculatePoints(isCorrect, settings);
+                if (isCorrect) {
+                    engine.correctCount++;
+                    engine.addScore(points);
+                    if (select) select.style.borderColor = 'var(--success)';
+                } else {
+                    engine.wrongCount++;
+                    if (select) select.style.borderColor = 'var(--danger)';
+                }
+
+                if (select) select.disabled = true;
+
+                engine.answers.push({
+                    gapIndex: i,
+                    givenAnswer: givenAnswer || '(leer)',
+                    correctAnswer: gap.correct,
+                    correct: isCorrect,
+                    timeTaken: engine.getElapsedSeconds()
+                });
+            });
+
+            document.getElementById('check-btn').style.display = 'none';
+            const percent = Math.round((engine.correctCount / gaps.length) * 100);
+            const feedbackEl = document.getElementById('feedback-area');
+            feedbackEl.innerHTML = `<span style="color: var(--accent); font-weight: 600;">
+                ${engine.correctCount} von ${gaps.length} Lücken richtig (${percent}%)</span>`;
+
+            setTimeout(() => engine.finishGame(), 1500);
+        }
+
+        init();
+    </script>
+</body>
+</html>

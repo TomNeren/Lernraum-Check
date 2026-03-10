@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LernSpiel — Admin</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .container { max-width: 900px; }
+
+        /* Login */
+        #login-view { max-width: 400px; margin: 80px auto; }
+
+        /* Tabs */
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            padding: 10px 18px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-muted);
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { color: var(--text-primary); }
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 4px;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .data-table th {
+            text-align: left;
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+        }
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        .data-table tr:hover td {
+            background: var(--bg-card-hover);
+        }
+        .data-table tr { cursor: pointer; }
+
+        /* Room indicator */
+        .room-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .room-dot.active { background: var(--success); }
+        .room-dot.inactive { background: var(--text-muted); }
+
+        /* Filter bar */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar select, .filter-bar input {
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+        }
+        .filter-bar select:focus, .filter-bar input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Student Detail Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            overflow-y: auto;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            width: 100%;
+            max-width: 700px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Game type badges */
+        .type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: var(--accent-glow);
+            color: var(--accent);
+        }
+
+        /* Template box */
+        .template-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 12px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: var(--text-secondary);
+            max-height: 300px;
+            overflow-y: auto;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 10px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Active checkins */
+        .checkin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .checkin-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+        }
+        .checkin-card .name { font-weight: 600; font-size: 0.9rem; }
+        .checkin-card .info { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Login View -->
+        <div id="login-view">
+            <div class="header">
+                <h1>Admin</h1>
+                <p class="subtitle">LernSpiel Verwaltung</p>
+            </div>
+            <div class="input-group">
+                <label>Passwort</label>
+                <input type="password" id="admin-password" placeholder="Admin-Passwort eingeben" onkeydown="if(event.key==='Enter')adminLogin()">
+            </div>
+            <div id="login-error" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 12px;"></div>
+            <button class="btn btn-primary" onclick="adminLogin()">Anmelden</button>
+        </div>
+
+        <!-- Dashboard (hidden until login) -->
+        <div id="dashboard" style="display: none;">
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1 style="font-family: var(--font-serif); font-size: 1.5rem;">Admin Dashboard</h1>
+                <button class="btn btn-secondary" onclick="adminLogout()" style="width: auto; padding: 6px 14px; font-size: 0.8rem;">Abmelden</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid" id="stats-grid"></div>
+
+            <!-- Tabs -->
+            <div class="tab-bar">
+                <button class="tab-btn active" onclick="switchTab('students')">Schüler</button>
+                <button class="tab-btn" onclick="switchTab('klassen')">Klassen</button>
+                <button class="tab-btn" onclick="switchTab('live')">Live-Ansicht</button>
+                <button class="tab-btn" onclick="switchTab('games')">Spiele</button>
+                <button class="tab-btn" onclick="switchTab('vocab')">Vokabeln</button>
+                <button class="tab-btn" onclick="switchTab('templates')">Vorlagen</button>
+            </div>
+
+            <!-- Tab: Students -->
+            <div class="tab-content active" id="tab-students">
+                <div class="filter-bar">
+                    <select id="filter-klasse" onchange="renderStudents()">
+                        <option value="">Alle Klassen</option>
+                    </select>
+                    <input type="text" id="filter-search" placeholder="Name suchen..." oninput="renderStudents()">
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="students-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Name</th>
+                                <th>Klasse</th>
+                                <th>Raum</th>
+                                <th>Spiele</th>
+                                <th>Schnitt</th>
+                                <th>Zuletzt</th>
+                                <th>Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab: Klassen -->
+            <div class="tab-content" id="tab-klassen">
+                <!-- Create Class -->
+                <div class="section-title">Neue Klasse erstellen</div>
+                <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                    <input type="text" id="new-klasse-name" placeholder="z.B. 8a, BFW1..." style="flex: 1; padding: 10px 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.9rem;" onkeydown="if(event.key==='Enter')createKlasse()">
+                    <button class="btn btn-primary" onclick="createKlasse()" style="width: auto; padding: 10px 20px;">Erstellen</button>
+                </div>
+                <div id="klasse-create-status" style="margin-bottom: 12px;"></div>
+
+                <!-- Class List -->
+                <div class="section-title">Klassen</div>
+                <div id="klassen-list"></div>
+
+                <!-- Class Detail (shown when a class is selected) -->
+                <div id="klasse-detail" style="display: none; margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h2 id="klasse-detail-name" style="font-family: var(--font-serif); font-size: 1.3rem;"></h2>
+                        <button class="btn btn-secondary" onclick="closeKlasseDetail()" style="width: auto; padding: 4px 12px; font-size: 0.8rem;">Zurück</button>
+                    </div>
+
+                    <!-- Lesson Code Section -->
+                    <div class="card" id="lesson-code-section" style="margin-bottom: 16px;">
+                        <div id="lesson-inactive" style="text-align: center;">
+                            <div class="section-title">Stunde starten</div>
+                            <div style="display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                                <select id="lesson-duration" style="padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans);">
+                                    <option value="45">45 Min</option>
+                                    <option value="60">60 Min</option>
+                                    <option value="90" selected>90 Min</option>
+                                    <option value="120">120 Min</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="startLesson()" style="width: auto; padding: 8px 20px;">Stunde starten</button>
+                            </div>
+                        </div>
+                        <div id="lesson-active" style="display: none; text-align: center;">
+                            <div class="section-title">Aktive Stunde</div>
+                            <div id="lesson-code-display" style="font-size: 3rem; font-weight: 700; letter-spacing: 0.3em; color: var(--accent); margin: 12px 0;"></div>
+                            <div id="lesson-timer" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;"></div>
+                            <div id="lesson-qr" style="margin: 16px 0;"></div>
+                            <div id="lesson-url" style="font-size: 0.75rem; color: var(--text-muted); word-break: break-all; margin-bottom: 12px;"></div>
+                            <button class="btn btn-secondary" onclick="stopLesson()" style="width: auto; padding: 6px 16px; font-size: 0.8rem; border-color: var(--danger); color: var(--danger);">Stunde beenden</button>
+                        </div>
+                    </div>
+
+                    <!-- Add Students -->
+                    <div class="section-title">Schüler hinzufügen</div>
+                    <div class="card" style="margin-bottom: 16px;">
+                        <textarea id="add-students-input" rows="5" placeholder="Namen einfügen (einer pro Zeile)&#10;Max Mustermann&#10;Anna Schmidt&#10;..." style="width: 100%; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.85rem; resize: vertical; margin-bottom: 8px;"></textarea>
+                        <div id="add-students-status" style="margin-bottom: 8px;"></div>
+                        <button class="btn btn-primary" onclick="addStudentsToKlasse()" style="width: auto; padding: 8px 16px;">Hinzufügen</button>
+                    </div>
+
+                    <!-- Student List -->
+                    <div class="section-title">Schülerliste (<span id="klasse-student-count">0</span>)</div>
+                    <div id="klasse-students-list"></div>
+
+                    <!-- Delete class -->
+                    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);">
+                        <button onclick="deleteKlasseAction()" style="background: none; border: 1px solid var(--danger); color: var(--danger); padding: 6px 14px; border-radius: var(--radius-sm); font-size: 0.8rem; cursor: pointer; font-family: var(--font-sans); font-weight: 600;">Klasse löschen</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Live View -->
+            <div class="tab-content" id="tab-live">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="section-title">Aktive Schüler (eingecheckt)</div>
+                    <button id="checkout-all-btn" class="btn btn-secondary" onclick="forceCheckoutAll()" style="width: auto; padding: 6px 14px; font-size: 0.8rem; display: none;">Alle auschecken</button>
+                </div>
+                <div class="checkin-grid" id="live-checkins"></div>
+                <div id="live-empty" class="text-muted text-sm text-center" style="display: none; padding: 40px;">
+                    Keine Schüler aktuell eingecheckt.
+                </div>
+            </div>
+
+            <!-- Tab: Games -->
+            <div class="tab-content" id="tab-games">
+                <div class="section-title">Neues Spiel erstellen</div>
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="input-group">
+                        <label>Spieltyp</label>
+                        <select id="game-type">
+                            <option value="vocab-quiz">📝 Vokabel-Quiz</option>
+                            <option value="sentence-builder">🔤 Satzbauen</option>
+                            <option value="fill-blank">✏️ Lückentext</option>
+                            <option value="mark-word">🖍️ Markieren</option>
+                            <option value="complete-story">📖 Geschichte</option>
+                            <option value="memory-match">🃏 Memory</option>
+                            <option value="category-sort">📂 Sortieren</option>
+                            <option value="speed-round">⚡ Speed Round</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Titel</label>
+                        <input type="text" id="game-title" placeholder="z.B. Unit 3 — Vokabel-Quiz">
+                    </div>
+                    <div class="input-group">
+                        <label>Kompetenz (optional)</label>
+                        <input type="text" id="game-kompetenz" placeholder="z.B. Wortschatz, Grammatik">
+                    </div>
+                    <div class="input-group">
+                        <label>Config (JSON)</label>
+                        <textarea id="game-config" rows="10" style="width: 100%; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: monospace; font-size: 0.8rem; resize: vertical;"></textarea>
+                    </div>
+                    <div id="game-create-status" style="margin-bottom: 8px;"></div>
+                    <button class="btn btn-primary" onclick="createGame()">Spiel erstellen</button>
+                </div>
+
+                <div class="section-title">Vorhandene Spiele</div>
+                <div id="games-list"></div>
+            </div>
+
+            <!-- Tab: Vocab -->
+            <div class="tab-content" id="tab-vocab">
+                <div class="section-title">Vokabeln importieren</div>
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="input-group">
+                        <label>Thema / Topic</label>
+                        <input type="text" id="vocab-topic" placeholder="z.B. Unit 3 - Environment">
+                    </div>
+                    <div class="input-group">
+                        <label>Vokabeln (eine pro Zeile: english | german | example)</label>
+                        <textarea id="vocab-input" rows="10" placeholder="sustainable | nachhaltig | We need sustainable energy sources.
+environment | Umwelt | We must protect our environment."
+                            style="width: 100%; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.85rem; resize: vertical; line-height: 1.6;"></textarea>
+                    </div>
+                    <div id="vocab-status" style="margin-bottom: 8px;"></div>
+                    <button class="btn btn-primary" onclick="importVocab()">Importieren</button>
+                </div>
+
+                <div class="section-title">Themen verwalten</div>
+                <div id="vocab-topics-list"></div>
+
+                <!-- Topic Detail (items + assignments) -->
+                <div id="vocab-topic-detail" style="display: none; margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h2 id="vocab-topic-detail-name" style="font-family: var(--font-serif); font-size: 1.2rem;"></h2>
+                        <button class="btn btn-secondary" onclick="closeVocabTopicDetail()" style="width: auto; padding: 4px 12px; font-size: 0.8rem;">Zurück</button>
+                    </div>
+
+                    <!-- Assign to class -->
+                    <div class="card" style="margin-bottom: 16px;">
+                        <div class="section-title">Klassen-Zuweisung</div>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <select id="vocab-assign-klasse" style="padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans);"></select>
+                            <button class="btn btn-primary" onclick="assignVocabTopicToKlasse()" style="width: auto; padding: 8px 14px;">Zuweisen</button>
+                        </div>
+                        <div id="vocab-topic-assignments" style="margin-top: 10px;"></div>
+                    </div>
+
+                    <!-- Items list -->
+                    <div class="section-title">Vokabeln (<span id="vocab-topic-item-count">0</span>)</div>
+                    <div id="vocab-topic-items"></div>
+
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                        <button onclick="deleteVocabTopicAction()" style="background: none; border: 1px solid var(--danger); color: var(--danger); padding: 6px 14px; border-radius: var(--radius-sm); font-size: 0.8rem; cursor: pointer; font-family: var(--font-sans); font-weight: 600;">Gesamtes Thema löschen</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Templates -->
+            <div class="tab-content" id="tab-templates">
+                <div class="section-title">Vokabel-Import Vorlage</div>
+                <p class="text-muted text-sm mb-12">Kopiere diese Vorlage und passe sie an. Format: english | german | example (eine Zeile pro Vokabel)</p>
+                <div class="template-box" id="tpl-vocab">
+<button class="copy-btn" onclick="copyTemplate('tpl-vocab')">Kopieren</button>
+sustainable | nachhaltig | We need sustainable energy sources.
+environment | Umwelt | We must protect our environment.
+renewable | erneuerbar | Solar power is a renewable energy source.
+pollution | Verschmutzung | Air pollution is a serious problem.
+climate change | Klimawandel | Climate change affects everyone.</div>
+
+                <div class="section-title mt-24">Spiel-Vorlagen (JSON)</div>
+
+                <p class="text-muted text-sm mb-12">Vocab-Quiz</p>
+                <div class="template-box" id="tpl-vocab-quiz">
+<button class="copy-btn" onclick="copyTemplate('tpl-vocab-quiz')">Kopieren</button>
+{
+  "questions": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "prompt": "sustainable",
+      "correct": "nachhaltig",
+      "distractors": ["erneuerbar", "umweltfreundlich", "verschmutzt"],
+      "example": "We need sustainable energy sources."
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "prompt": "environment",
+      "correct": "Umwelt",
+      "distractors": ["Natur", "Wetter", "Klima"],
+      "example": "We must protect our environment."
+    }
+  ],
+  "settings": {
+    "shuffleQuestions": true,
+    "showExamples": true,
+    "pointsPerCorrect": 10,
+    "bonusForSpeed": true,
+    "timeLimit": 15
+  }
+}</div>
+
+                <p class="text-muted text-sm mb-12 mt-24">Sentence Builder</p>
+                <div class="template-box" id="tpl-sentence">
+<button class="copy-btn" onclick="copyTemplate('tpl-sentence')">Kopieren</button>
+{
+  "questions": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "prompt": "Bringe die Wörter in die richtige Reihenfolge",
+      "correct": "She goes to school every day",
+      "distractors": ["She", "goes", "to", "school", "every", "day"],
+      "example": "Simple Present - 3. Person Singular"
+    }
+  ],
+  "settings": {
+    "shuffleQuestions": true,
+    "showExamples": true,
+    "pointsPerCorrect": 10,
+    "bonusForSpeed": true,
+    "timeLimit": 30
+  }
+}</div>
+
+                <p class="text-muted text-sm mb-12 mt-24">Fill the Blank</p>
+                <div class="template-box" id="tpl-fill">
+<button class="copy-btn" onclick="copyTemplate('tpl-fill')">Kopieren</button>
+{
+  "questions": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "prompt": "She ___ to school every day.",
+      "correct": "goes",
+      "distractors": ["go", "went", "going"],
+      "example": "Simple Present"
+    }
+  ],
+  "settings": {
+    "shuffleQuestions": true,
+    "showExamples": true,
+    "pointsPerCorrect": 10,
+    "bonusForSpeed": true,
+    "timeLimit": 20
+  }
+}</div>
+
+                <p class="text-muted text-sm mb-12 mt-24">Mark the Word</p>
+                <div class="template-box" id="tpl-mark">
+<button class="copy-btn" onclick="copyTemplate('tpl-mark')">Kopieren</button>
+{
+  "questions": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "prompt": "Markiere alle Verben im Simple Present.",
+      "correct": "goes reads",
+      "distractors": ["She", "goes", "to", "school", "and", "reads", "many", "books", "every", "day"]
+    }
+  ],
+  "settings": {
+    "shuffleQuestions": false,
+    "showExamples": false,
+    "pointsPerCorrect": 10,
+    "bonusForSpeed": false,
+    "timeLimit": 60
+  }
+}</div>
+
+                <p class="text-muted text-sm mb-12 mt-24">Memory Match</p>
+                <div class="template-box" id="tpl-memory">
+<button class="copy-btn" onclick="copyTemplate('tpl-memory')">Kopieren</button>
+{
+  "questions": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "prompt": "sustainable",
+      "correct": "nachhaltig",
+      "distractors": []
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "prompt": "environment",
+      "correct": "Umwelt",
+      "distractors": []
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000003",
+      "prompt": "renewable",
+      "correct": "erneuerbar",
+      "distractors": []
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000004",
+      "prompt": "pollution",
+      "correct": "Verschmutzung",
+      "distractors": []
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000005",
+      "prompt": "climate",
+      "correct": "Klima",
+      "distractors": []
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000006",
+      "prompt": "resource",
+      "correct": "Ressource",
+      "distractors": []
+    }
+  ],
+  "settings": {
+    "shuffleQuestions": true,
+    "showExamples": false,
+    "pointsPerCorrect": 20,
+    "bonusForSpeed": true,
+    "timeLimit": 120
+  }
+}</div>
+
+                <p class="text-muted text-sm mb-12 mt-24">Category Sort</p>
+                <div class="template-box" id="tpl-category">
+<button class="copy-btn" onclick="copyTemplate('tpl-category')">Kopieren</button>
+{
+  "questions": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "prompt": "house",
+      "correct": "Nouns",
+      "distractors": ["Nouns", "Verbs", "Adjectives"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "prompt": "run",
+      "correct": "Verbs",
+      "distractors": ["Nouns", "Verbs", "Adjectives"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000003",
+      "prompt": "beautiful",
+      "correct": "Adjectives",
+      "distractors": ["Nouns", "Verbs", "Adjectives"]
+    }
+  ],
+  "settings": {
+    "shuffleQuestions": true,
+    "showExamples": false,
+    "pointsPerCorrect": 10,
+    "bonusForSpeed": false,
+    "timeLimit": 60
+  }
+}</div>
+
+                <p class="text-muted text-sm mb-12 mt-24">Speed Round</p>
+                <div class="template-box" id="tpl-speed">
+<button class="copy-btn" onclick="copyTemplate('tpl-speed')">Kopieren</button>
+{
+  "questions": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "prompt": "house",
+      "correct": "Haus",
+      "distractors": ["Heim"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "prompt": "school",
+      "correct": "Schule",
+      "distractors": []
+    }
+  ],
+  "settings": {
+    "shuffleQuestions": true,
+    "showExamples": false,
+    "pointsPerCorrect": 10,
+    "bonusForSpeed": true,
+    "timeLimit": 8
+  }
+}</div>
+
+                <p class="text-muted text-sm mb-12 mt-24">Complete the Story</p>
+                <div class="template-box" id="tpl-story">
+<button class="copy-btn" onclick="copyTemplate('tpl-story')">Kopieren</button>
+{
+  "questions": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "prompt": "Yesterday, Sarah {gap0} to London. She {gap1} the Tower.",
+      "correct": "went,visited",
+      "distractors": ["went,go,goes", "visited,visit,visits"]
+    }
+  ],
+  "settings": {
+    "shuffleQuestions": false,
+    "showExamples": false,
+    "pointsPerCorrect": 10,
+    "bonusForSpeed": false,
+    "timeLimit": 120
+  }
+}</div>
+            </div>
+        </div>
+
+        <!-- Student Detail Modal -->
+        <div class="modal-overlay" id="student-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 id="modal-student-name" style="font-family: var(--font-serif);"></h2>
+                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                </div>
+                <div id="modal-content"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/js/api.js?v=4"></script>
+    <script>
+        // --- State ---
+        let allStudents = [];
+        let overview = null;
+
+        // --- Auth ---
+        function isAdminLoggedIn() {
+            return sessionStorage.getItem('admin_token') !== null;
+        }
+
+        async function adminLogin() {
+            const pw = document.getElementById('admin-password').value;
+            const errEl = document.getElementById('login-error');
+            try {
+                const res = await API.adminLogin(pw);
+                sessionStorage.setItem('admin_token', res.token);
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                loadDashboard();
+            } catch (e) {
+                errEl.textContent = 'Falsches Passwort.';
+            }
+        }
+
+        function adminLogout() {
+            sessionStorage.removeItem('admin_token');
+            location.reload();
+        }
+
+        // --- Init ---
+        if (isAdminLoggedIn()) {
+            document.getElementById('login-view').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            loadDashboard();
+        }
+
+        async function loadDashboard() {
+            try {
+                const [ov, students, games] = await Promise.all([
+                    API.adminOverview(),
+                    API.adminStudents(),
+                    API.listGames()
+                ]);
+                overview = ov;
+                allStudents = students;
+
+                renderStats(ov);
+                renderKlasseFilter(ov.klassen);
+                renderStudents();
+                renderLive(ov.activeCheckins);
+                renderGamesList(games);
+                loadGameTemplate();
+                loadKlassen();
+                loadVocabTopics();
+            } catch (e) {
+                console.error('Dashboard laden fehlgeschlagen:', e);
+            }
+        }
+
+        // --- Stats ---
+        function renderStats(ov) {
+            document.getElementById('stats-grid').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${ov.totalStudents}</div>
+                    <div class="stat-label">Schüler</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${ov.totalGames}</div>
+                    <div class="stat-label">Spiele</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${ov.totalSessions}</div>
+                    <div class="stat-label">Sessions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${ov.totalVocabItems}</div>
+                    <div class="stat-label">Vokabeln</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${ov.activeCheckins.length}</div>
+                    <div class="stat-label">Aktiv jetzt</div>
+                </div>
+            `;
+        }
+
+        // --- Klasse Filter ---
+        function renderKlasseFilter(klassen) {
+            const sel = document.getElementById('filter-klasse');
+            klassen.forEach(k => {
+                const opt = document.createElement('option');
+                opt.value = k;
+                opt.textContent = k;
+                sel.appendChild(opt);
+            });
+        }
+
+        // --- Students Table ---
+        function renderStudents() {
+            const klasse = document.getElementById('filter-klasse').value;
+            const search = document.getElementById('filter-search').value.toLowerCase();
+            const tbody = document.getElementById('students-body');
+
+            let filtered = allStudents;
+            if (klasse) filtered = filtered.filter(s => s.klasse === klasse);
+            if (search) filtered = filtered.filter(s => s.name.toLowerCase().includes(search));
+
+            tbody.innerHTML = filtered.map(s => {
+                const isActive = s.currentRaum != null;
+                const lastSeen = new Date(s.lastSeen).toLocaleDateString('de-DE');
+                const checkoutBtn = isActive
+                    ? `<button onclick="event.stopPropagation(); forceCheckoutStudent('${s.id}', '${esc(s.name)}')" style="background: none; border: 1px solid var(--warning); color: var(--warning); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; margin-right: 4px;" title="Auschecken">Logout</button>`
+                    : '';
+                return `<tr onclick="showStudentDetail('${s.id}')">
+                    <td><span class="room-dot ${isActive ? 'active' : 'inactive'}"></span></td>
+                    <td><strong>${esc(s.name)}</strong></td>
+                    <td>${esc(s.klasse)}</td>
+                    <td>${s.currentRaum ? esc(s.currentRaum) : '<span class="text-muted">—</span>'}</td>
+                    <td>${s.totalGames}</td>
+                    <td>${s.averagePercent > 0 ? s.averagePercent + '%' : '—'}</td>
+                    <td class="text-muted">${lastSeen}</td>
+                    <td>${checkoutBtn}<button onclick="event.stopPropagation(); deleteStudent('${s.id}', '${esc(s.name)}')" style="background: none; border: 1px solid var(--danger); color: var(--danger); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;" title="Löschen">&#x2715;</button></td>
+                </tr>`;
+            }).join('');
+        }
+
+        // --- Live View ---
+        function renderLive(checkins) {
+            const container = document.getElementById('live-checkins');
+            const empty = document.getElementById('live-empty');
+            const checkoutAllBtn = document.getElementById('checkout-all-btn');
+
+            if (checkins.length === 0) {
+                container.innerHTML = '';
+                empty.style.display = 'block';
+                checkoutAllBtn.style.display = 'none';
+                return;
+            }
+            empty.style.display = 'none';
+            checkoutAllBtn.style.display = 'inline-block';
+
+            // Gruppieren nach Raum
+            const byRoom = {};
+            checkins.forEach(c => {
+                if (!byRoom[c.raum]) byRoom[c.raum] = [];
+                byRoom[c.raum].push(c);
+            });
+
+            let html = '';
+            for (const [raum, students] of Object.entries(byRoom).sort()) {
+                html += `<div style="grid-column: 1 / -1;"><div class="section-title" style="margin-top: 8px;">${esc(raum)} (${students.length})</div></div>`;
+                students.forEach(s => {
+                    const time = new Date(s.checkedInAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                    html += `<div class="checkin-card">
+                        <div class="name">${esc(s.playerName)}</div>
+                        <div class="info">${esc(s.klasse)} · seit ${time}</div>
+                    </div>`;
+                });
+            }
+            container.innerHTML = html;
+        }
+
+        // --- Student Detail ---
+        async function showStudentDetail(playerID) {
+            const modal = document.getElementById('student-modal');
+            const content = document.getElementById('modal-content');
+            content.innerHTML = '<div class="text-muted text-center">Lade...</div>';
+            modal.classList.add('active');
+
+            try {
+                const d = await API.adminStudentDetail(playerID);
+                document.getElementById('modal-student-name').textContent = `${d.name} (${d.klasse})`;
+
+                const typeEmoji = {
+                    'vocab-quiz': '📝', 'sentence-builder': '🔤', 'fill-blank': '✏️',
+                    'mark-word': '🖍️', 'complete-story': '📖', 'memory-match': '🃏',
+                    'category-sort': '📂', 'speed-round': '⚡'
+                };
+
+                let html = `
+                    <div class="stats-grid" style="margin-bottom: 16px;">
+                        <div class="stat-card">
+                            <div class="stat-number" style="font-size: 1.5rem;">${d.currentRaum || '—'}</div>
+                            <div class="stat-label">Aktueller Raum</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" style="font-size: 1.5rem;">${d.totalGames}</div>
+                            <div class="stat-label">Spiele</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" style="font-size: 1.5rem;">${d.averagePercent}%</div>
+                            <div class="stat-label">Schnitt</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" style="font-size: 1.5rem;">${d.vocabTotal}</div>
+                            <div class="stat-label">Vokabeln</div>
+                        </div>
+                    </div>`;
+
+                // Vocab Boxes
+                if (d.vocabTotal > 0) {
+                    const maxBox = Math.max(...d.vocabBoxes, 1);
+                    html += `<div class="section-title">Vokabel-Fortschritt</div>
+                        <div style="display: flex; gap: 6px; align-items: flex-end; height: 50px; margin-bottom: 8px;">
+                            ${d.vocabBoxes.map((count, i) => {
+                                const h = Math.max(4, (count / maxBox) * 46);
+                                return `<div style="flex: 1; text-align: center;">
+                                    <div style="background: var(--accent); height: ${h}px; border-radius: 2px;"></div>
+                                    <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">Box ${i+1}: ${count}</div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                        <div class="text-muted text-sm mb-12">${d.vocabDueToday} Karten fällig heute</div>`;
+                }
+
+                // Tasks
+                if (d.openTasks > 0 || d.completedTasks > 0) {
+                    html += `<div class="section-title">Aufgaben</div>
+                        <div class="text-sm mb-12">${d.openTasks} offen · ${d.completedTasks} erledigt</div>`;
+                }
+
+                // Recent Games
+                if (d.games.length > 0) {
+                    html += `<div class="section-title">Letzte Spiele</div>`;
+                    d.games.slice(0, 15).forEach(g => {
+                        const emoji = typeEmoji[g.gameType] || '🎮';
+                        const pct = Math.round(g.percent);
+                        const pctColor = pct >= 70 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
+                        const date = g.completedAt ? new Date(g.completedAt).toLocaleDateString('de-DE') : '';
+                        html += `<div class="result-item">
+                            <div>${emoji} ${esc(g.gameTitle)} <span class="text-muted text-sm">${date}</span></div>
+                            <div style="font-weight: 700; color: ${pctColor};">${pct}%</div>
+                        </div>`;
+                    });
+                }
+
+                // Action buttons
+                const checkoutBtn = d.currentRaum
+                    ? `<button class="btn btn-secondary" onclick="forceCheckoutStudent('${d.id}', '${esc(d.name)}')" style="width: auto; padding: 6px 14px; font-size: 0.8rem;">Auschecken</button>`
+                    : '';
+                html += `<div style="display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+                    ${checkoutBtn}
+                    <button style="background: none; border: 1px solid var(--danger); color: var(--danger); padding: 6px 14px; border-radius: var(--radius-sm); font-size: 0.8rem; cursor: pointer; font-family: var(--font-sans); font-weight: 600;" onclick="deleteStudent('${d.id}', '${esc(d.name)}')">Schüler löschen</button>
+                </div>`;
+
+                content.innerHTML = html;
+            } catch (e) {
+                content.innerHTML = `<div style="color: var(--danger);">Fehler: ${e.message}</div>`;
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('student-modal').classList.remove('active');
+        }
+        document.getElementById('student-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // --- Games ---
+        function loadGameTemplate() {
+            const type = document.getElementById('game-type').value;
+            const templates = {
+                'vocab-quiz': document.getElementById('tpl-vocab-quiz'),
+                'sentence-builder': document.getElementById('tpl-sentence'),
+                'fill-blank': document.getElementById('tpl-fill'),
+                'mark-word': document.getElementById('tpl-mark'),
+                'memory-match': document.getElementById('tpl-memory'),
+                'category-sort': document.getElementById('tpl-category'),
+                'speed-round': document.getElementById('tpl-speed'),
+                'complete-story': document.getElementById('tpl-story'),
+            };
+            const tpl = templates[type];
+            if (tpl) {
+                // Get text content without the "Kopieren" button text
+                const text = tpl.textContent.replace('Kopieren', '').trim();
+                document.getElementById('game-config').value = text;
+            }
+        }
+        document.getElementById('game-type').addEventListener('change', loadGameTemplate);
+
+        async function createGame() {
+            const type = document.getElementById('game-type').value;
+            const title = document.getElementById('game-title').value.trim();
+            const kompetenz = document.getElementById('game-kompetenz').value.trim() || null;
+            const configStr = document.getElementById('game-config').value.trim();
+            const statusEl = document.getElementById('game-create-status');
+
+            if (!title) { statusEl.innerHTML = '<span style="color: var(--danger);">Bitte Titel eingeben.</span>'; return; }
+
+            let config;
+            try {
+                config = JSON.parse(configStr);
+            } catch (e) {
+                statusEl.innerHTML = '<span style="color: var(--danger);">Ungültiges JSON: ' + e.message + '</span>';
+                return;
+            }
+
+            try {
+                await API.createGame({ type, title, kompetenz, config });
+                statusEl.innerHTML = '<span style="color: var(--success); font-weight: 600;">Spiel erstellt!</span>';
+                document.getElementById('game-title').value = '';
+                // Reload games list
+                const games = await API.listGames();
+                renderGamesList(games);
+            } catch (e) {
+                statusEl.innerHTML = '<span style="color: var(--danger);">Fehler: ' + e.message + '</span>';
+            }
+        }
+
+        function renderGamesList(games) {
+            const container = document.getElementById('games-list');
+            if (games.length === 0) {
+                container.innerHTML = '<div class="text-muted text-center" style="padding: 20px;">Noch keine Spiele.</div>';
+                return;
+            }
+
+            const typeEmoji = {
+                'vocab-quiz': '📝', 'sentence-builder': '🔤', 'fill-blank': '✏️',
+                'mark-word': '🖍️', 'complete-story': '📖', 'memory-match': '🃏',
+                'category-sort': '📂', 'speed-round': '⚡'
+            };
+
+            container.innerHTML = games.map(g => {
+                const emoji = typeEmoji[g.type] || '🎮';
+                return `<div class="card" style="margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${emoji} ${esc(g.title)}</strong>
+                            <div class="meta">${g.kompetenz || ''} · ${g.questionCount || 0} Fragen</div>
+                        </div>
+                        <button onclick="deleteGame('${g.id}')" style="background: none; border: 1px solid var(--danger); color: var(--danger); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Löschen</button>
+                    </div>
+                    <div style="margin-top: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                        <select class="game-assign-select" data-game-id="${g.id}" style="padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-size: 0.75rem;"></select>
+                        <button onclick="assignGameToKlasse('${g.id}')" style="background: var(--accent); color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: 600;">Zuweisen</button>
+                        <span id="game-assignments-${g.id}" style="font-size: 0.75rem; color: var(--text-muted);"></span>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // Load assignments for each game + populate class selects
+            games.forEach(g => loadGameAssignmentInfo(g.id));
+        }
+
+        async function deleteGame(gameID) {
+            if (!confirm('Spiel und alle zugehörigen Sessions wirklich löschen?')) return;
+            try {
+                await API.adminDeleteGame(gameID);
+                const games = await API.listGames();
+                renderGamesList(games);
+            } catch (e) {
+                alert('Fehler: ' + e.message);
+            }
+        }
+
+        // --- Vocab Import ---
+        async function importVocab() {
+            const topic = document.getElementById('vocab-topic').value.trim();
+            const raw = document.getElementById('vocab-input').value.trim();
+            const statusEl = document.getElementById('vocab-status');
+
+            if (!raw) { statusEl.innerHTML = '<span style="color: var(--danger);">Bitte Vokabeln eingeben.</span>'; return; }
+
+            const lines = raw.split('\n').filter(l => l.trim());
+            const items = [];
+            for (const line of lines) {
+                const parts = line.split('|').map(s => s.trim());
+                if (parts.length < 2) continue;
+                items.push({ english: parts[0], german: parts[1], example: parts[2] || null });
+            }
+
+            if (items.length === 0) {
+                statusEl.innerHTML = '<span style="color: var(--danger);">Keine gültigen Vokabeln erkannt.</span>';
+                return;
+            }
+
+            try {
+                await API.importVocab(topic || null, items);
+                statusEl.innerHTML = `<span style="color: var(--success); font-weight: 600;">${items.length} Vokabeln importiert!</span>`;
+                document.getElementById('vocab-input').value = '';
+                loadVocabTopics();
+            } catch (e) {
+                statusEl.innerHTML = `<span style="color: var(--danger);">Fehler: ${e.message}</span>`;
+            }
+        }
+
+        // --- Tabs ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        // --- Template Copy ---
+        function copyTemplate(id) {
+            const el = document.getElementById(id);
+            const text = el.textContent.replace('Kopieren', '').trim();
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = el.querySelector('.copy-btn');
+                btn.textContent = 'Kopiert!';
+                setTimeout(() => btn.textContent = 'Kopieren', 1500);
+            });
+        }
+
+        // --- Klassen Management ---
+        let currentKlasseID = null;
+        let lessonTimerInterval = null;
+
+        async function loadKlassen() {
+            try {
+                const klassen = await API.adminListKlassen();
+                renderKlassenList(klassen);
+            } catch (e) {
+                console.error('Klassen laden fehlgeschlagen:', e);
+            }
+        }
+
+        function renderKlassenList(klassen) {
+            const container = document.getElementById('klassen-list');
+            if (klassen.length === 0) {
+                container.innerHTML = '<div class="text-muted text-center" style="padding: 20px;">Noch keine Klassen erstellt.</div>';
+                return;
+            }
+            container.innerHTML = klassen.map(k => {
+                const codeBadge = k.hasActiveCode
+                    ? '<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-left: 8px;" title="Stunde aktiv"></span>'
+                    : '';
+                return `<div class="card card-clickable" onclick="openKlasseDetail('${k.id}')" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${esc(k.name)}</strong>${codeBadge}
+                        <div class="meta">${k.studentCount} Schüler</div>
+                    </div>
+                    <span style="color: var(--text-muted); font-size: 1.2rem;">›</span>
+                </div>`;
+            }).join('');
+        }
+
+        async function createKlasse() {
+            const input = document.getElementById('new-klasse-name');
+            const name = input.value.trim();
+            const statusEl = document.getElementById('klasse-create-status');
+            if (!name) { statusEl.innerHTML = '<span style="color: var(--danger); font-size: 0.85rem;">Bitte Namen eingeben.</span>'; return; }
+            try {
+                await API.adminCreateKlasse(name);
+                input.value = '';
+                statusEl.innerHTML = '<span style="color: var(--success); font-size: 0.85rem; font-weight: 600;">Klasse erstellt!</span>';
+                setTimeout(() => statusEl.innerHTML = '', 2000);
+                loadKlassen();
+            } catch (e) {
+                statusEl.innerHTML = `<span style="color: var(--danger); font-size: 0.85rem;">${e.message}</span>`;
+            }
+        }
+
+        async function openKlasseDetail(klasseID) {
+            currentKlasseID = klasseID;
+            document.getElementById('klassen-list').style.display = 'none';
+            document.querySelector('#tab-klassen > .section-title').style.display = 'none';
+            document.querySelector('#tab-klassen > div:first-of-type').style.display = 'none';
+            document.getElementById('klasse-create-status').style.display = 'none';
+            document.getElementById('klasse-detail').style.display = 'block';
+
+            try {
+                const detail = await API.adminKlasseDetail(klasseID);
+                document.getElementById('klasse-detail-name').textContent = `Klasse ${detail.name}`;
+                document.getElementById('klasse-student-count').textContent = detail.studentCount;
+
+                // Render students
+                const studentsList = document.getElementById('klasse-students-list');
+                if (detail.students.length === 0) {
+                    studentsList.innerHTML = '<div class="text-muted text-sm" style="padding: 12px;">Noch keine Schüler. Füge oben welche hinzu.</div>';
+                } else {
+                    studentsList.innerHTML = detail.students.map(s =>
+                        `<div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px;">
+                            <span>${esc(s.name)}</span>
+                            <button onclick="removeStudentFromKlasse('${s.id}', '${esc(s.name)}')" style="background: none; border: 1px solid var(--danger); color: var(--danger); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;">&#x2715;</button>
+                        </div>`
+                    ).join('');
+                }
+
+                // Lesson code state
+                if (detail.activeCode) {
+                    showActiveLesson(detail.activeCode);
+                } else {
+                    document.getElementById('lesson-inactive').style.display = 'block';
+                    document.getElementById('lesson-active').style.display = 'none';
+                }
+            } catch (e) {
+                alert('Fehler: ' + e.message);
+            }
+        }
+
+        function closeKlasseDetail() {
+            currentKlasseID = null;
+            document.getElementById('klasse-detail').style.display = 'none';
+            document.getElementById('klassen-list').style.display = '';
+            document.querySelector('#tab-klassen > .section-title').style.display = '';
+            document.querySelector('#tab-klassen > div:first-of-type').style.display = '';
+            document.getElementById('klasse-create-status').style.display = '';
+            if (lessonTimerInterval) { clearInterval(lessonTimerInterval); lessonTimerInterval = null; }
+            loadKlassen();
+        }
+
+        async function addStudentsToKlasse() {
+            const textarea = document.getElementById('add-students-input');
+            const raw = textarea.value.trim();
+            const statusEl = document.getElementById('add-students-status');
+            if (!raw) { statusEl.innerHTML = '<span style="color: var(--danger); font-size: 0.85rem;">Bitte Namen eingeben.</span>'; return; }
+
+            const names = raw.split('\n').map(n => n.trim()).filter(n => n);
+            try {
+                const res = await API.adminAddStudents(currentKlasseID, names);
+                statusEl.innerHTML = `<span style="color: var(--success); font-size: 0.85rem; font-weight: 600;">${res.created} neu erstellt, ${res.existing} bereits vorhanden.</span>`;
+                textarea.value = '';
+                openKlasseDetail(currentKlasseID);
+            } catch (e) {
+                statusEl.innerHTML = `<span style="color: var(--danger); font-size: 0.85rem;">${e.message}</span>`;
+            }
+        }
+
+        async function removeStudentFromKlasse(playerID, name) {
+            if (!confirm(`"${name}" aus der Klasse entfernen und alle Daten löschen?`)) return;
+            try {
+                await API.adminRemoveStudent(currentKlasseID, playerID);
+                openKlasseDetail(currentKlasseID);
+            } catch (e) {
+                alert('Fehler: ' + e.message);
+            }
+        }
+
+        async function deleteKlasseAction() {
+            if (!confirm('Klasse wirklich löschen? (Schüler bleiben erhalten)')) return;
+            try {
+                await API.adminDeleteKlasse(currentKlasseID);
+                closeKlasseDetail();
+            } catch (e) {
+                alert('Fehler: ' + e.message);
+            }
+        }
+
+        async function startLesson() {
+            const duration = parseInt(document.getElementById('lesson-duration').value);
+            try {
+                const res = await API.adminStartLesson(currentKlasseID, duration);
+                showActiveLesson(res);
+            } catch (e) {
+                alert('Fehler: ' + e.message);
+            }
+        }
+
+        function showActiveLesson(codeData) {
+            document.getElementById('lesson-inactive').style.display = 'none';
+            document.getElementById('lesson-active').style.display = 'block';
+            document.getElementById('lesson-code-display').textContent = codeData.code;
+
+            const fullURL = window.location.origin + codeData.joinURL;
+            document.getElementById('lesson-url').textContent = fullURL;
+
+            // QR Code via API
+            const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(fullURL)}&bgcolor=0a0a0f&color=e8e8f0`;
+            document.getElementById('lesson-qr').innerHTML = `<img src="${qrImg}" alt="QR Code" style="border-radius: 8px; border: 2px solid var(--border);">`;
+
+            // Timer
+            updateLessonTimer(codeData.expiresAt);
+            if (lessonTimerInterval) clearInterval(lessonTimerInterval);
+            lessonTimerInterval = setInterval(() => updateLessonTimer(codeData.expiresAt), 1000);
+        }
+
+        function updateLessonTimer(expiresAt) {
+            const remaining = new Date(expiresAt) - new Date();
+            const timerEl = document.getElementById('lesson-timer');
+            if (remaining <= 0) {
+                timerEl.innerHTML = '<span style="color: var(--danger);">Abgelaufen</span>';
+                if (lessonTimerInterval) { clearInterval(lessonTimerInterval); lessonTimerInterval = null; }
+                return;
+            }
+            const min = Math.floor(remaining / 60000);
+            const sec = Math.floor((remaining % 60000) / 1000);
+            timerEl.textContent = `Noch ${min}:${String(sec).padStart(2, '0')} Minuten`;
+        }
+
+        async function stopLesson() {
+            if (!confirm('Stunde wirklich beenden? Der Code wird ungültig.')) return;
+            try {
+                await API.adminStopLesson(currentKlasseID);
+                document.getElementById('lesson-inactive').style.display = 'block';
+                document.getElementById('lesson-active').style.display = 'none';
+                if (lessonTimerInterval) { clearInterval(lessonTimerInterval); lessonTimerInterval = null; }
+            } catch (e) {
+                alert('Fehler: ' + e.message);
+            }
+        }
+
+        // --- Vocab Topic Management ---
+        let currentVocabTopic = null;
+
+        async function loadVocabTopics() {
+            try {
+                const topics = await API.adminVocabTopics();
+                renderVocabTopics(topics);
+            } catch (e) { console.error('Vocab topics:', e); }
+        }
+
+        function renderVocabTopics(topics) {
+            const container = document.getElementById('vocab-topics-list');
+            if (topics.length === 0) {
+                container.innerHTML = '<div class="text-muted text-sm" style="padding: 12px;">Noch keine Vokabeln importiert.</div>';
+                return;
+            }
+            container.innerHTML = topics.map(t => {
+                const badges = t.assignedTo.length > 0
+                    ? t.assignedTo.map(k => `<span style="display: inline-block; padding: 1px 6px; background: var(--accent-glow); color: var(--accent); border-radius: 99px; font-size: 0.65rem; font-weight: 600;">${esc(k)}</span>`).join(' ')
+                    : '<span style="font-size: 0.7rem; color: var(--text-muted);">Nicht zugewiesen</span>';
+                return `<div class="card card-clickable" onclick="openVocabTopicDetail('${esc(t.topic)}')" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${esc(t.topic)}</strong>
+                        <div class="meta">${t.itemCount} Vokabeln · ${badges}</div>
+                    </div>
+                    <span style="color: var(--text-muted); font-size: 1.2rem;">›</span>
+                </div>`;
+            }).join('');
+        }
+
+        async function openVocabTopicDetail(topic) {
+            currentVocabTopic = topic;
+            document.getElementById('vocab-topics-list').style.display = 'none';
+            document.getElementById('vocab-topic-detail').style.display = 'block';
+            document.getElementById('vocab-topic-detail-name').textContent = topic;
+
+            // Populate klasse select
+            const sel = document.getElementById('vocab-assign-klasse');
+            sel.innerHTML = '';
+            if (overview && overview.klassen) {
+                overview.klassen.forEach(k => {
+                    sel.innerHTML += `<option value="${esc(k)}">${esc(k)}</option>`;
+                });
+            }
+            // Also add klassen from Klasse model
+            try {
+                const klassen = await API.adminListKlassen();
+                const existing = new Set(Array.from(sel.options).map(o => o.value));
+                klassen.forEach(k => {
+                    if (!existing.has(k.name)) {
+                        sel.innerHTML += `<option value="${esc(k.name)}">${esc(k.name)}</option>`;
+                    }
+                });
+            } catch (e) {}
+
+            // Load items
+            try {
+                const items = await API.adminVocabTopicItems(topic);
+                document.getElementById('vocab-topic-item-count').textContent = items.length;
+                const container = document.getElementById('vocab-topic-items');
+                container.innerHTML = items.map(item =>
+                    `<div class="card" style="padding: 10px 14px; margin-bottom: 4px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${esc(item.english)}</strong> — ${esc(item.german)}
+                                ${item.exampleSentence ? `<div class="text-muted text-sm" style="font-style: italic;">${esc(item.exampleSentence)}</div>` : ''}
+                            </div>
+                            <button onclick="deleteVocabItem('${item.id}')" style="background: none; border: 1px solid var(--danger); color: var(--danger); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; flex-shrink: 0;">&#x2715;</button>
+                        </div>
+                    </div>`
+                ).join('');
+            } catch (e) {
+                document.getElementById('vocab-topic-items').innerHTML = `<div style="color: var(--danger);">${e.message}</div>`;
+            }
+
+            // Load assignments
+            loadVocabTopicAssignments(topic);
+        }
+
+        async function loadVocabTopicAssignments(topic) {
+            try {
+                const assignments = await API.adminGetVocabTopicAssignments(topic);
+                const container = document.getElementById('vocab-topic-assignments');
+                if (assignments.length === 0) {
+                    container.innerHTML = '<span class="text-muted text-sm">Keiner Klasse zugewiesen.</span>';
+                } else {
+                    container.innerHTML = assignments.map(a =>
+                        `<span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: var(--accent-glow); color: var(--accent); border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-right: 4px;">
+                            ${esc(a.klasse || 'Einzeln')}
+                            <button onclick="removeAssignmentAction('${a.id}')" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.9rem; padding: 0 2px;">×</button>
+                        </span>`
+                    ).join('');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function assignVocabTopicToKlasse() {
+            const klasse = document.getElementById('vocab-assign-klasse').value;
+            if (!klasse) return;
+            try {
+                await API.adminAssignContent('vocab-topic', currentVocabTopic, klasse, null);
+                loadVocabTopicAssignments(currentVocabTopic);
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        async function deleteVocabItem(vocabID) {
+            if (!confirm('Vokabel wirklich löschen?')) return;
+            try {
+                await API.adminDeleteVocabItem(vocabID);
+                openVocabTopicDetail(currentVocabTopic);
+            } catch (e) { alert('Fehler: ' + e.message); }
+        }
+
+        async function deleteVocabTopicAction() {
+            if (!confirm(`Gesamtes Thema "${currentVocabTopic}" und alle Vokabeln löschen?`)) return;
+            try {
+                await API.adminDeleteVocabTopic(currentVocabTopic);
+                closeVocabTopicDetail();
+                loadVocabTopics();
+            } catch (e) { alert('Fehler: ' + e.message); }
+        }
+
+        function closeVocabTopicDetail() {
+            currentVocabTopic = null;
+            document.getElementById('vocab-topic-detail').style.display = 'none';
+            document.getElementById('vocab-topics-list').style.display = '';
+            loadVocabTopics();
+        }
+
+        async function removeAssignmentAction(assignmentID) {
+            try {
+                await API.adminRemoveAssignment(assignmentID);
+                if (currentVocabTopic) loadVocabTopicAssignments(currentVocabTopic);
+                // Also refresh game assignments if needed
+                const games = await API.listGames();
+                renderGamesList(games);
+            } catch (e) { alert('Fehler: ' + e.message); }
+        }
+
+        // --- Game Assignments ---
+        async function loadGameAssignmentInfo(gameID) {
+            // Populate the class select for this game
+            const sel = document.querySelector(`.game-assign-select[data-game-id="${gameID}"]`);
+            if (!sel) return;
+
+            try {
+                const klassen = await API.adminListKlassen();
+                sel.innerHTML = klassen.map(k => `<option value="${esc(k.name)}">${esc(k.name)}</option>`).join('');
+                if (overview && overview.klassen) {
+                    const existing = new Set(klassen.map(k => k.name));
+                    overview.klassen.forEach(k => {
+                        if (!existing.has(k)) sel.innerHTML += `<option value="${esc(k)}">${esc(k)}</option>`;
+                    });
+                }
+            } catch (e) {}
+
+            // Load existing assignments
+            try {
+                const assignments = await API.adminGetGameAssignments(gameID);
+                const span = document.getElementById(`game-assignments-${gameID}`);
+                if (assignments.length === 0) {
+                    span.innerHTML = 'Alle Klassen';
+                } else {
+                    span.innerHTML = assignments.map(a =>
+                        `<span style="display: inline-flex; align-items: center; gap: 2px; padding: 1px 6px; background: var(--accent-glow); color: var(--accent); border-radius: 99px; font-size: 0.65rem; font-weight: 600; margin-right: 2px;">${esc(a.klasse || 'Einzeln')}<button onclick="event.stopPropagation(); removeAssignmentAction('${a.id}')" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.8rem; padding: 0 1px;">×</button></span>`
+                    ).join('');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function assignGameToKlasse(gameID) {
+            const sel = document.querySelector(`.game-assign-select[data-game-id="${gameID}"]`);
+            const klasse = sel ? sel.value : null;
+            if (!klasse) return;
+            try {
+                await API.adminAssignContent('game', gameID, klasse, null);
+                loadGameAssignmentInfo(gameID);
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        // --- Delete & Force Checkout ---
+        async function deleteStudent(playerID, name) {
+            if (!confirm(`"${name}" und alle zugehörigen Daten wirklich löschen?`)) return;
+            try {
+                await API.adminDeleteStudent(playerID);
+                closeModal();
+                loadDashboard();
+            } catch (e) {
+                alert('Fehler: ' + e.message);
+            }
+        }
+
+        async function forceCheckoutStudent(playerID, name) {
+            if (!confirm(`"${name}" wirklich auschecken?`)) return;
+            try {
+                await API.adminForceCheckout(playerID);
+                loadDashboard();
+            } catch (e) {
+                alert('Fehler: ' + e.message);
+            }
+        }
+
+        async function forceCheckoutAll() {
+            if (!confirm('Alle aktiven Schüler auschecken?')) return;
+            try {
+                const res = await API.adminForceCheckoutAll();
+                alert(`${res.checkedOut} Schüler ausgecheckt.`);
+                loadDashboard();
+            } catch (e) {
+                alert('Fehler: ' + e.message);
+            }
+        }
+
+        // --- Utility ---
+        function esc(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>

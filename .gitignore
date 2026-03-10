@@ -1,0 +1,28 @@
+# Build
+.build/
+.swiftpm/
+
+# Database
+*.sqlite
+
+# macOS
+.DS_Store
+.DS_Store 2
+
+# Environment (secrets)
+.env
+
+# Cloudflare
+cert.pem
+
+# Uploads storage
+Storage/
+
+# IDE
+.vscode/
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+
+# Claude
+.claude/

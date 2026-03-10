@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LernSpiel — Vokabeltrainer</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .vocab-card {
+            perspective: 800px;
+            margin-bottom: 20px;
+            min-height: 200px;
+        }
+        .vocab-card-inner {
+            position: relative;
+            width: 100%;
+            min-height: 200px;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .vocab-card.flipped .vocab-card-inner {
+            transform: rotateY(180deg);
+        }
+        .vocab-card-face {
+            position: absolute;
+            width: 100%;
+            min-height: 200px;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            text-align: center;
+        }
+        .vocab-card-back {
+            transform: rotateY(180deg);
+        }
+        .vocab-word {
+            font-family: var(--font-serif);
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        .vocab-example {
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+        .vocab-box-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 12px;
+        }
+        .rating-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .rating-btn {
+            padding: 14px 12px;
+            border-radius: var(--radius-sm);
+            border: none;
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .rating-btn:active { transform: scale(0.96); }
+        .rating-nochmal { background: var(--danger); color: white; }
+        .rating-schwer { background: var(--warning); color: #0a0a0f; }
+        .rating-gut { background: var(--success); color: white; }
+        .rating-leicht { background: var(--accent); color: white; }
+        .box-bars {
+            display: flex;
+            gap: 4px;
+            margin-top: 12px;
+            align-items: flex-end;
+            height: 40px;
+        }
+        .box-bar {
+            flex: 1;
+            background: var(--bg-secondary);
+            border-radius: 2px;
+            min-height: 4px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        .box-bar-fill {
+            background: var(--accent);
+            border-radius: 2px;
+            transition: height 0.3s;
+        }
+        .box-bar-label {
+            text-align: center;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .summary-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Loading -->
+        <div id="view-loading" class="view active">
+            <div class="header">
+                <h1>Vokabeltrainer</h1>
+                <p class="subtitle">Lade Karten...</p>
+            </div>
+        </div>
+
+        <!-- Game View -->
+        <div id="view-game" class="view">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <button class="btn btn-secondary" onclick="window.location.href='/hub.html'" style="width: auto; padding: 8px 16px; font-size: 0.8rem;">Zurück</button>
+                <span id="card-counter" style="font-size: 0.85rem; color: var(--text-secondary);"></span>
+                <span id="score-info" style="font-size: 0.85rem; color: var(--accent); font-weight: 600;"></span>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="progress-fill" style="width: 0%;"></div>
+            </div>
+
+            <!-- Flashcard -->
+            <div class="vocab-card" id="vocab-card" onclick="flipCard()">
+                <div class="vocab-card-inner" id="vocab-card-inner">
+                    <div class="vocab-card-face vocab-card-front">
+                        <div class="vocab-word" id="card-english"></div>
+                        <div class="vocab-box-label" id="card-box-label"></div>
+                    </div>
+                    <div class="vocab-card-face vocab-card-back">
+                        <div class="vocab-word" id="card-german"></div>
+                        <div class="vocab-example" id="card-example"></div>
+                        <div class="vocab-box-label" id="card-box-label-back"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aufdecken Button (vor Flip) -->
+            <div id="reveal-area" style="text-align: center;">
+                <button class="btn btn-primary" onclick="flipCard()" id="btn-reveal">Aufdecken</button>
+            </div>
+
+            <!-- Rating Buttons (nach Flip) -->
+            <div id="rating-area" style="display: none;">
+                <div class="text-muted text-sm text-center mb-12">Wie gut wusstest du die Antwort?</div>
+                <div class="rating-grid">
+                    <button class="rating-btn rating-nochmal" onclick="rate(0)">Nochmal</button>
+                    <button class="rating-btn rating-schwer" onclick="rate(1)">Schwer</button>
+                    <button class="rating-btn rating-gut" onclick="rate(2)">Gut</button>
+                    <button class="rating-btn rating-leicht" onclick="rate(3)">Leicht</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results View -->
+        <div id="view-results" class="view">
+            <div class="header">
+                <h1>Fertig!</h1>
+            </div>
+
+            <div class="summary-card">
+                <div id="results-emoji" style="font-size: 3rem; margin-bottom: 8px;"></div>
+                <div style="font-size: 1.5rem; font-weight: 700;" id="results-correct"></div>
+                <div class="text-muted text-sm" id="results-subtitle"></div>
+            </div>
+
+            <!-- Box-Verteilung -->
+            <div class="section-title">Dein Lernfortschritt</div>
+            <div class="summary-card">
+                <div class="box-bars" id="box-bars"></div>
+                <div style="display: flex; gap: 4px; margin-top: 4px;">
+                    <div class="box-bar-label" style="flex: 1;">Box 1</div>
+                    <div class="box-bar-label" style="flex: 1;">Box 2</div>
+                    <div class="box-bar-label" style="flex: 1;">Box 3</div>
+                    <div class="box-bar-label" style="flex: 1;">Box 4</div>
+                    <div class="box-bar-label" style="flex: 1;">Box 5</div>
+                </div>
+                <div class="text-muted text-sm mt-8" id="stats-due"></div>
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-top: 16px;">
+                <button class="btn btn-primary" onclick="window.location.reload()" style="flex: 1;">Nochmal üben</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/hub.html'" style="flex: 1;">Zurück zum Hub</button>
+            </div>
+        </div>
+
+        <!-- Error View -->
+        <div id="view-error" class="view">
+            <div class="header">
+                <h1>Fehler</h1>
+                <p class="subtitle" id="error-message"></p>
+            </div>
+            <button class="btn btn-secondary" onclick="window.location.href='/hub.html'">Zurück zum Hub</button>
+        </div>
+
+    </div>
+
+    <script src="/js/api.js?v=4"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+        if (!Auth.requireLogin()) { /* redirected */ }
+
+        const player = Auth.getPlayer();
+        let cards = [];
+        let currentIndex = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+        let isFlipped = false;
+
+        function showView(id) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        async function loadCards() {
+            try {
+                cards = await API.getDueVocab(player.id);
+
+                if (cards.length === 0) {
+                    document.getElementById('error-message').textContent =
+                        'Keine Karten fällig! Komm später wieder oder importiere neue Vokabeln.';
+                    showView('view-error');
+                    return;
+                }
+
+                currentIndex = 0;
+                correctCount = 0;
+                wrongCount = 0;
+                showCard();
+                showView('view-game');
+            } catch (e) {
+                document.getElementById('error-message').textContent = e.message;
+                showView('view-error');
+            }
+        }
+
+        function showCard() {
+            if (currentIndex >= cards.length) {
+                finishSession();
+                return;
+            }
+
+            const card = cards[currentIndex];
+            isFlipped = false;
+
+            document.getElementById('vocab-card').classList.remove('flipped');
+            document.getElementById('card-english').textContent = card.english;
+            document.getElementById('card-german').textContent = card.german;
+            document.getElementById('card-example').textContent = card.exampleSentence || '';
+            document.getElementById('card-example').style.display = card.exampleSentence ? 'block' : 'none';
+
+            const boxLabel = `Box ${card.box}`;
+            document.getElementById('card-box-label').textContent = boxLabel;
+            document.getElementById('card-box-label-back').textContent = boxLabel;
+
+            document.getElementById('card-counter').textContent = `Karte ${currentIndex + 1} / ${cards.length}`;
+            document.getElementById('score-info').textContent = `${correctCount} richtig`;
+            document.getElementById('progress-fill').style.width = `${(currentIndex / cards.length) * 100}%`;
+
+            document.getElementById('reveal-area').style.display = 'block';
+            document.getElementById('rating-area').style.display = 'none';
+        }
+
+        function flipCard() {
+            if (isFlipped) return;
+            isFlipped = true;
+
+            document.getElementById('vocab-card').classList.add('flipped');
+            document.getElementById('reveal-area').style.display = 'none';
+            document.getElementById('rating-area').style.display = 'block';
+        }
+
+        async function rate(quality) {
+            const card = cards[currentIndex];
+
+            if (quality >= 2) {
+                correctCount++;
+            } else {
+                wrongCount++;
+            }
+
+            try {
+                await API.reviewVocab(player.id, card.vocabID, quality);
+            } catch (e) {
+                console.error('Review fehlgeschlagen:', e);
+            }
+
+            currentIndex++;
+            showCard();
+        }
+
+        async function finishSession() {
+            document.getElementById('progress-fill').style.width = '100%';
+
+            const total = cards.length;
+            const percent = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+            const emoji = percent >= 90 ? '🏆' : percent >= 70 ? '🎉' : percent >= 50 ? '👍' : '💪';
+
+            document.getElementById('results-emoji').textContent = emoji;
+            document.getElementById('results-correct').textContent = `${correctCount} von ${total} gewusst`;
+            document.getElementById('results-subtitle').textContent =
+                `${wrongCount} zum Wiederholen`;
+
+            // Stats laden
+            try {
+                const stats = await API.getVocabStats(player.id);
+                const boxes = [stats.box1, stats.box2, stats.box3, stats.box4, stats.box5];
+                const maxBox = Math.max(...boxes, 1);
+                const barsContainer = document.getElementById('box-bars');
+                barsContainer.innerHTML = boxes.map((count, i) => {
+                    const height = Math.max(4, (count / maxBox) * 36);
+                    return `<div class="box-bar">
+                        <div class="box-bar-fill" style="height: ${height}px;"></div>
+                        <div style="text-align: center; font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">${count}</div>
+                    </div>`;
+                }).join('');
+
+                document.getElementById('stats-due').textContent =
+                    `${stats.dueToday} Karten noch fällig · ${stats.total} Karten gesamt`;
+            } catch (e) {
+                console.error('Stats laden fehlgeschlagen:', e);
+            }
+
+            // Konfetti bei >= 70%
+            if (percent >= 70) {
+                const container = document.createElement('div');
+                container.className = 'confetti-container';
+                document.body.appendChild(container);
+                const colors = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#818cf8', '#fbbf24'];
+                for (let i = 0; i < 60; i++) {
+                    const piece = document.createElement('div');
+                    piece.className = 'confetti-piece';
+                    piece.style.left = Math.random() * 100 + '%';
+                    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    piece.style.animationDelay = Math.random() * 1.5 + 's';
+                    piece.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+                    container.appendChild(piece);
+                }
+                setTimeout(() => container.remove(), 4000);
+            }
+
+            showView('view-results');
+        }
+
+        loadCards();
+    </script>
+</body>
+</html>

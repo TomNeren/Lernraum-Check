@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>LernSpiel</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+
+        <!-- LOGIN VIEW -->
+        <div id="view-login" class="view active">
+            <div class="header">
+                <h1>LernSpiel</h1>
+                <p class="subtitle">Melde dich an, um zu spielen</p>
+            </div>
+
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="input-name">Vorname</label>
+                    <input type="text" id="input-name" placeholder="Dein Vorname" autocomplete="off" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="input-klasse">Klasse</label>
+                    <input type="text" id="input-klasse" placeholder="z.B. BFW1, 1BFR2" autocomplete="off" required>
+                </div>
+
+                <div id="login-error" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 12px; display: none;"></div>
+
+                <button type="submit" class="btn btn-primary" id="btn-login">
+                    Weiter
+                </button>
+            </form>
+
+            <div class="mt-24 text-center text-muted text-sm">
+                Dein Name wird gespeichert, damit dein Fortschritt erhalten bleibt.
+            </div>
+        </div>
+
+        <!-- LOADING -->
+        <div id="view-loading" class="view" style="align-items: center; justify-content: center;">
+            <div class="text-muted">Verbinde...</div>
+        </div>
+
+    </div>
+
+    <script src="/js/api.js?v=4"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+        // Wenn schon eingeloggt → direkt zur Lernraum-Auswahl
+        if (Auth.isLoggedIn()) {
+            window.location.href = '/lernraum.html';
+        }
+
+        const form = document.getElementById('login-form');
+        const errorEl = document.getElementById('login-error');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.style.display = 'none';
+
+            const name = document.getElementById('input-name').value.trim();
+            const klasse = document.getElementById('input-klasse').value.trim();
+
+            if (!name || !klasse) {
+                errorEl.textContent = 'Bitte Name und Klasse eingeben.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            const btn = document.getElementById('btn-login');
+            btn.disabled = true;
+            btn.textContent = 'Verbinde...';
+
+            try {
+                const player = await API.login(name, klasse);
+                Auth.setPlayer(player);
+                window.location.href = '/lernraum.html';
+            } catch (err) {
+                errorEl.textContent = `Fehler: ${err.message}`;
+                errorEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Weiter';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LernSpiel — Hub</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <h1>LernSpiel</h1>
+            <p class="subtitle" id="welcome-text">Hallo!</p>
+        </div>
+
+        <!-- Lernraum Badge -->
+        <div id="raum-badge" style="display: flex; align-items: center; justify-content: space-between; background: var(--accent-glow); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 10px 16px; margin-bottom: 16px;">
+            <span id="raum-text" style="font-weight: 600; font-size: 0.9rem;"></span>
+            <button onclick="window.location.href='/lernraum.html'" style="background: none; border: 1px solid var(--accent); color: var(--accent); padding: 4px 12px; border-radius: 99px; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 600; cursor: pointer;">Raum wechseln</button>
+        </div>
+
+        <!-- Player Stats -->
+        <div id="stats-bar" style="display: flex; gap: 8px; margin-bottom: 20px;">
+            <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                <div style="font-size: 1.5rem; font-weight: 700;" id="stat-games">0</div>
+                <div class="text-muted text-sm">Spiele</div>
+            </div>
+            <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                <div style="font-size: 1.5rem; font-weight: 700;" id="stat-score">0</div>
+                <div class="text-muted text-sm">Punkte</div>
+            </div>
+            <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent);" id="stat-avg">—</div>
+                <div class="text-muted text-sm">Schnitt</div>
+            </div>
+        </div>
+
+        <!-- Persönliche Aufgaben -->
+        <div id="tasks-section" style="display: none;">
+            <div class="section-title">Deine Aufgaben</div>
+            <div id="tasks-list"></div>
+        </div>
+
+        <!-- Vokabeltrainer -->
+        <div id="vocab-section" style="display: none;">
+            <div class="section-title">Dein Vokabeltraining</div>
+            <div class="card card-clickable" onclick="window.location.href='/games/vocab-srs.html'" style="border-color: var(--accent); background: var(--accent-glow);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3>📚 Vokabeltrainer</h3>
+                        <div class="meta" id="vocab-due-info">Lade...</div>
+                    </div>
+                    <span class="badge badge-accent">SRS</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Games List -->
+        <div class="section-title">Verfügbare Spiele</div>
+        <div id="games-list">
+            <div class="text-muted text-sm text-center" style="padding: 20px;">Lade Spiele...</div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="no-games" style="display: none; text-align: center; padding: 40px 20px;">
+            <div style="font-size: 2rem; margin-bottom: 8px;">🎮</div>
+            <div class="text-muted">Noch keine Spiele verfügbar.</div>
+        </div>
+
+        <div class="spacer"></div>
+
+        <!-- Footer -->
+        <div style="padding: 16px 0; display: flex; gap: 8px;">
+            <button class="btn btn-secondary" onclick="logoutStudent()" style="flex: 1;">
+                Abmelden
+            </button>
+        </div>
+    </div>
+
+    <script src="/js/api.js?v=4"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+        if (!Auth.requireLogin()) { /* redirected */ }
+
+        const player = Auth.getPlayer();
+        document.getElementById('welcome-text').textContent =
+            `Hallo ${player.name}! (${player.klasse})`;
+
+        // Stats laden
+        async function loadStats() {
+            try {
+                const stats = await API.getPlayerStats(player.id);
+                document.getElementById('stat-games').textContent = stats.totalGames;
+                document.getElementById('stat-score').textContent = stats.totalScore;
+                document.getElementById('stat-avg').textContent =
+                    stats.totalGames > 0 ? Math.round(stats.averagePercent) + '%' : '—';
+            } catch (e) {
+                console.log('Stats nicht verfügbar:', e.message);
+            }
+        }
+
+        // Spiele laden
+        async function loadGames() {
+            const container = document.getElementById('games-list');
+            const noGames = document.getElementById('no-games');
+
+            try {
+                const games = await API.listGamesForPlayer(player.id);
+
+                if (games.length === 0) {
+                    container.style.display = 'none';
+                    noGames.style.display = 'block';
+                    return;
+                }
+
+                container.innerHTML = games.map(game => {
+                    const typeLabel = {
+                        'vocab-quiz': '📝 Vokabel-Quiz',
+                        'sentence-builder': '🔤 Satzbauen',
+                        'fill-blank': '✏️ Lückentext',
+                        'mark-word': '🖍️ Markieren',
+                        'complete-story': '📖 Geschichte',
+                        'memory-match': '🃏 Memory',
+                        'category-sort': '📂 Sortieren',
+                        'speed-round': '⚡ Speed Round',
+                    }[game.type] || '🎮 Spiel';
+
+                    const metaParts = [];
+                    if (game.kompetenz) metaParts.push(game.kompetenz);
+                    if (game.lsNumber) metaParts.push(`LS ${game.lsNumber}`);
+                    if (game.questionCount) metaParts.push(`${game.questionCount} Fragen`);
+
+                    return `
+                        <div class="card card-clickable" onclick="startGame('${game.id}', '${game.type}')">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div>
+                                    <h3>${game.title}</h3>
+                                    <div class="meta">${metaParts.join(' · ')}</div>
+                                </div>
+                                <span class="badge badge-accent">${typeLabel}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                const errDiv = document.createElement('div');
+                errDiv.className = 'card';
+                errDiv.style.cssText = 'text-align: center; color: var(--danger);';
+                errDiv.textContent = 'Fehler beim Laden: ' + e.message;
+                container.innerHTML = '';
+                container.appendChild(errDiv);
+            }
+        }
+
+        function startGame(gameID, gameType) {
+            const routes = {
+                'vocab-quiz': '/games/vocab-quiz.html',
+                'sentence-builder': '/games/sentence-builder.html',
+                'fill-blank': '/games/fill-blank.html',
+                'mark-word': '/games/mark-word.html',
+                'complete-story': '/games/complete-story.html',
+                'memory-match': '/games/memory-match.html',
+                'category-sort': '/games/category-sort.html',
+                'speed-round': '/games/speed-round.html',
+            };
+            const route = routes[gameType] || '/games/vocab-quiz.html';
+            window.location.href = `${route}?game=${gameID}`;
+        }
+
+        // Raum anzeigen
+        const currentRaum = Auth.getRaum();
+        const raumBadge = document.getElementById('raum-badge');
+        if (currentRaum) {
+            document.getElementById('raum-text').textContent = `📍 ${currentRaum}`;
+        } else {
+            raumBadge.style.display = 'none';
+        }
+
+        // Vocab Stats laden
+        async function loadVocabStats() {
+            try {
+                const stats = await API.getVocabStats(player.id);
+                if (stats.total > 0) {
+                    document.getElementById('vocab-section').style.display = 'block';
+                    document.getElementById('vocab-due-info').textContent =
+                        stats.dueToday > 0
+                            ? `${stats.dueToday} Karten fällig heute`
+                            : 'Alle Karten gelernt!';
+                }
+            } catch (e) {
+                // Vocab nicht verfügbar — kein Problem
+            }
+        }
+
+        // Personal Tasks laden
+        async function loadTasks() {
+            try {
+                const tasks = await API.getPersonalTasks(player.id);
+                if (tasks.length === 0) return;
+
+                document.getElementById('tasks-section').style.display = 'block';
+                const container = document.getElementById('tasks-list');
+
+                const typeEmoji = {
+                    'vocab-quiz': '📝', 'sentence-builder': '🔤', 'fill-blank': '✏️',
+                    'mark-word': '🖍️', 'complete-story': '📖', 'memory-match': '🃏',
+                    'category-sort': '📂', 'speed-round': '⚡'
+                };
+
+                const routes = {
+                    'vocab-quiz': '/games/vocab-quiz.html',
+                    'sentence-builder': '/games/sentence-builder.html',
+                    'fill-blank': '/games/fill-blank.html',
+                    'mark-word': '/games/mark-word.html',
+                    'complete-story': '/games/complete-story.html',
+                    'memory-match': '/games/memory-match.html',
+                    'category-sort': '/games/category-sort.html',
+                    'speed-round': '/games/speed-round.html',
+                };
+
+                container.innerHTML = tasks.map(task => {
+                    const emoji = typeEmoji[task.type] || '📋';
+                    const dueDateStr = task.dueDate
+                        ? `Fällig: ${new Date(task.dueDate).toLocaleDateString('de-DE')}`
+                        : '';
+
+                    return `
+                        <div class="card card-clickable" onclick="startPersonalTask('${task.id}', '${task.type}')"
+                             style="border-color: var(--warning); background: var(--warning-bg);">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div>
+                                    <h3>${emoji} ${task.title}</h3>
+                                    <div class="meta">${dueDateStr}</div>
+                                    ${task.note ? `<div class="text-muted text-sm mt-8" style="font-style: italic;">${task.note}</div>` : ''}
+                                </div>
+                                <span class="badge badge-warning">Aufgabe</span>
+                            </div>
+                        </div>`;
+                }).join('');
+            } catch (e) {
+                // Tasks nicht verfügbar
+            }
+        }
+
+        function startPersonalTask(taskID, gameType) {
+            // Store task ID for completion tracking
+            sessionStorage.setItem('currentTaskID', taskID);
+            const routes = {
+                'vocab-quiz': '/games/vocab-quiz.html',
+                'sentence-builder': '/games/sentence-builder.html',
+                'fill-blank': '/games/fill-blank.html',
+                'mark-word': '/games/mark-word.html',
+                'complete-story': '/games/complete-story.html',
+                'memory-match': '/games/memory-match.html',
+                'category-sort': '/games/category-sort.html',
+                'speed-round': '/games/speed-round.html',
+            };
+            const route = routes[gameType] || '/games/vocab-quiz.html';
+            window.location.href = `${route}?task=${taskID}`;
+        }
+
+        async function logoutStudent() {
+            try {
+                await API.checkoutLernraum(player.id);
+            } catch (e) { /* ignore */ }
+            Auth.logout();
+            window.location.href = '/';
+        }
+
+        loadStats();
+        loadGames();
+        loadVocabStats();
+        loadTasks();
+    </script>
+</body>
+</html>

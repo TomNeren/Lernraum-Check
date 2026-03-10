@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LernSpiel — Fill the Gap</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+
+        <div id="view-loading" class="view active" style="align-items: center; justify-content: center;">
+            <div class="text-muted">Lade Spiel...</div>
+        </div>
+
+        <!-- GAME VIEW -->
+        <div id="view-game" class="view">
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <span class="text-muted text-sm" id="question-counter">1 / 10</span>
+                <span class="badge badge-accent" id="score-badge">0 Punkte</span>
+            </div>
+            <div class="timer" id="timer">20</div>
+
+            <div class="question-text" id="sentence-text" style="font-size: 1.2rem; line-height: 1.8;"></div>
+
+            <!-- Choice mode -->
+            <div class="answer-grid" id="choice-grid" style="display: none;"></div>
+
+            <!-- Type mode -->
+            <div id="type-input-area" style="display: none;">
+                <div class="input-group">
+                    <input type="text" id="type-input" placeholder="Antwort eingeben..." autocomplete="off" autocapitalize="off">
+                </div>
+                <button class="btn btn-primary" onclick="submitTyped()">Überprüfen</button>
+            </div>
+
+            <div id="feedback-area" style="text-align: center; min-height: 48px; margin-bottom: 12px;"></div>
+        </div>
+
+        <!-- RESULTS VIEW -->
+        <div id="view-results" class="view">
+            <div class="header"><h1 id="results-emoji">🎉</h1></div>
+            <div class="score-display">
+                <div class="score-number" id="final-score">0</div>
+                <div class="score-label">Punkte</div>
+                <div class="score-percent" id="final-percent">0%</div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--success);" id="result-correct">0</div>
+                    <div class="text-muted text-sm">Richtig</div>
+                </div>
+                <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--danger);" id="result-wrong">0</div>
+                    <div class="text-muted text-sm">Falsch</div>
+                </div>
+                <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                    <div style="font-weight: 700;" id="result-time">0s</div>
+                    <div class="text-muted text-sm">Zeit</div>
+                </div>
+            </div>
+            <div class="section-title">Deine Antworten</div>
+            <div id="answer-review"></div>
+            <div class="section-title mt-24">Leaderboard</div>
+            <div id="leaderboard"><div class="text-muted text-sm text-center" style="padding: 12px;">Lade...</div></div>
+            <div class="mt-24" style="display: flex; gap: 8px;">
+                <button class="btn btn-primary" onclick="location.reload()" style="flex: 1;">Nochmal spielen</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/hub.html'" style="flex: 1;">Zurück zum Hub</button>
+            </div>
+        </div>
+
+        <!-- ERROR VIEW -->
+        <div id="view-error" class="view" style="align-items: center; justify-content: center;">
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 12px;">😕</div>
+                <div id="error-message" style="color: var(--danger); margin-bottom: 16px;"></div>
+                <button class="btn btn-secondary" onclick="window.location.href='/hub.html'">Zurück zum Hub</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js?v=4"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/game-engine.js"></script>
+    <script>
+        if (!Auth.requireLogin()) {}
+
+        let questions = [];
+        let currentIndex = 0;
+
+        const engine = new GameEngine({
+            onBuildReview(answers) {
+                document.getElementById('answer-review').innerHTML = answers.map((a, i) => {
+                    const q = questions[i];
+                    const icon = a.correct ? '✅' : '❌';
+                    const sentence = q.sentence.replace('___', `<strong>${GameEngine.escapeHTML(q.correct)}</strong>`);
+                    return `<div class="result-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <span><span class="icon">${icon}</span> ${sentence}</span>
+                        ${!a.correct ? `<span class="text-muted text-sm">Deine Antwort: ${GameEngine.escapeHTML(a.givenAnswer)}</span>` : ''}
+                    </div>`;
+                }).join('');
+            }
+        });
+
+        async function init() {
+            const gm = await engine.init();
+            if (!gm) return;
+
+            questions = gm.config.questions || [];
+            if (questions.length === 0) { engine.showError('Keine Aufgaben vorhanden.'); return; }
+
+            const settings = gm.config.settings || {};
+            if (settings.shuffleQuestions) questions = GameEngine.shuffleArray([...questions]);
+
+            engine.totalItems = questions.length;
+            engine.maxScore = questions.length * (settings.pointsPerCorrect || 10);
+
+            engine.showView('view-game');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentIndex >= questions.length) { engine.finishGame(); return; }
+
+            engine.answered = false;
+            const q = questions[currentIndex];
+            const settings = engine.gameModule.config.settings || {};
+
+            engine.updateProgress(currentIndex, questions.length);
+
+            // Display sentence with gap highlighted
+            const parts = q.sentence.split('___');
+            document.getElementById('sentence-text').innerHTML =
+                GameEngine.escapeHTML(parts[0]) +
+                '<span style="border-bottom: 2px solid var(--accent); padding: 2px 20px; margin: 0 4px;">___</span>' +
+                GameEngine.escapeHTML(parts[1] || '');
+
+            const mode = q.mode || 'choice';
+            const choiceGrid = document.getElementById('choice-grid');
+            const typeArea = document.getElementById('type-input-area');
+
+            if (mode === 'choice') {
+                typeArea.style.display = 'none';
+                choiceGrid.style.display = 'grid';
+                const options = GameEngine.shuffleArray([q.correct, ...(q.distractors || [])]);
+                choiceGrid.innerHTML = options.map(opt => `
+                    <button class="answer-btn" onclick="selectChoice(this)" data-answer="${GameEngine.escapeHTML(opt)}">
+                        ${GameEngine.escapeHTML(opt)}
+                    </button>
+                `).join('');
+            } else {
+                choiceGrid.style.display = 'none';
+                typeArea.style.display = 'block';
+                const input = document.getElementById('type-input');
+                input.value = '';
+                input.focus();
+            }
+
+            engine.clearFeedback();
+            const timeLimit = q.timeLimit || settings.timeLimit || 20;
+            engine.startTimer(timeLimit, () => { if (!engine.answered) timeUp(); });
+        }
+
+        function selectChoice(btn) {
+            if (engine.answered) return;
+            engine.answered = true;
+            engine.stopTimer();
+
+            const q = questions[currentIndex];
+            const settings = engine.gameModule.config.settings || {};
+            const givenAnswer = btn.dataset.answer;
+            const isCorrect = givenAnswer === q.correct;
+            const timeTaken = engine.getElapsedSeconds();
+
+            const points = engine.calculatePoints(isCorrect, settings);
+            if (isCorrect) { engine.addScore(points); engine.correctCount++; }
+            else { engine.wrongCount++; }
+
+            document.querySelectorAll('.answer-btn').forEach(b => {
+                b.disabled = true;
+                if (b.dataset.answer === q.correct) b.classList.add('correct');
+            });
+            if (!isCorrect) { btn.classList.add('wrong'); engine.shake(btn); }
+
+            engine.showFeedback(isCorrect, points, q.correct);
+            engine.answers.push({ questionID: q.id, givenAnswer, correct: isCorrect, timeTaken });
+
+            setTimeout(() => { currentIndex++; showQuestion(); }, isCorrect ? 1200 : 2000);
+        }
+
+        function submitTyped() {
+            if (engine.answered) return;
+            const input = document.getElementById('type-input');
+            const givenAnswer = input.value.trim();
+            if (!givenAnswer) return;
+
+            engine.answered = true;
+            engine.stopTimer();
+
+            const q = questions[currentIndex];
+            const settings = engine.gameModule.config.settings || {};
+            const isCorrect = givenAnswer.toLowerCase() === q.correct.toLowerCase();
+            const timeTaken = engine.getElapsedSeconds();
+
+            const points = engine.calculatePoints(isCorrect, settings);
+            if (isCorrect) { engine.addScore(points); engine.correctCount++; }
+            else { engine.wrongCount++; }
+
+            input.disabled = true;
+            input.style.borderColor = isCorrect ? 'var(--success)' : 'var(--danger)';
+            if (!isCorrect) engine.shake(input);
+
+            engine.showFeedback(isCorrect, points, q.correct);
+            engine.answers.push({ questionID: q.id, givenAnswer, correct: isCorrect, timeTaken });
+
+            setTimeout(() => { currentIndex++; showQuestion(); }, isCorrect ? 1200 : 2000);
+        }
+
+        // Enter key for type mode
+        document.getElementById('type-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') submitTyped();
+        });
+
+        function timeUp() {
+            engine.answered = true;
+            engine.wrongCount++;
+            const q = questions[currentIndex];
+            engine.showTimeUpFeedback(q.correct);
+            engine.answers.push({ questionID: q.id, givenAnswer: '(Zeit abgelaufen)', correct: false, timeTaken: q.timeLimit || 20 });
+            setTimeout(() => { currentIndex++; showQuestion(); }, 2000);
+        }
+
+        init();
+    </script>
+</body>
+</html>

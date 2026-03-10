@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>LernSpiel — Lernraum</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .raum-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .raum-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .raum-card:hover {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+        }
+
+        .raum-card.selected {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .raum-card .raum-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .raum-card .raum-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .custom-raum {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .custom-raum input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 1rem;
+        }
+
+        .custom-raum input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .custom-raum button {
+            padding: 12px 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-sans);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .custom-raum button:hover {
+            background: var(--accent-hover);
+        }
+
+        @media (max-width: 360px) {
+            .raum-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <h1>LernSpiel</h1>
+            <p class="subtitle">Wo lernst du heute?</p>
+        </div>
+
+        <div class="raum-grid">
+            <div class="raum-card" onclick="selectRaum('Klassenzimmer')">
+                <div class="raum-icon">🏫</div>
+                <div class="raum-label">Klassenzimmer</div>
+            </div>
+            <div class="raum-card" onclick="selectRaum('Pausenhof')">
+                <div class="raum-icon">🌳</div>
+                <div class="raum-label">Pausenhof</div>
+            </div>
+            <div class="raum-card" onclick="selectRaum('Arbeitsraum')">
+                <div class="raum-icon">📚</div>
+                <div class="raum-label">Arbeitsraum</div>
+            </div>
+        </div>
+
+        <div class="section-title">Anderer Ort</div>
+        <div class="custom-raum">
+            <input type="text" id="custom-raum-input" placeholder="z.B. Bibliothek, Zuhause..." autocomplete="off">
+            <button onclick="submitCustomRaum()">OK</button>
+        </div>
+
+        <div id="error-msg" style="color: var(--danger); font-size: 0.85rem; text-align: center; display: none;"></div>
+
+        <div class="spacer"></div>
+
+        <div class="text-center text-muted text-sm" style="padding: 16px 0;">
+            Dein Lernort wird gespeichert, damit die Lehrkraft sehen kann, wo du arbeitest.
+        </div>
+    </div>
+
+    <script src="/js/api.js?v=4"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+        if (!Auth.requireLogin()) { /* redirected */ }
+
+        const player = Auth.getPlayer();
+        const errorEl = document.getElementById('error-msg');
+
+        async function selectRaum(raum) {
+            // Highlight selected card
+            document.querySelectorAll('.raum-card').forEach(c => c.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+
+            await doCheckin(raum);
+        }
+
+        async function submitCustomRaum() {
+            const input = document.getElementById('custom-raum-input');
+            const raum = input.value.trim();
+            if (!raum) {
+                errorEl.textContent = 'Bitte einen Ort eingeben.';
+                errorEl.style.display = 'block';
+                return;
+            }
+            await doCheckin(raum);
+        }
+
+        async function doCheckin(raum) {
+            errorEl.style.display = 'none';
+            try {
+                await API.checkinLernraum(player.id, raum);
+                Auth.setRaum(raum);
+                window.location.href = '/hub.html';
+            } catch (err) {
+                errorEl.textContent = `Fehler: ${err.message}`;
+                errorEl.style.display = 'block';
+            }
+        }
+
+        // Enter key on custom input
+        document.getElementById('custom-raum-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') submitCustomRaum();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LernSpiel — Memory Match</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+
+        <div id="view-loading" class="view active" style="align-items: center; justify-content: center;">
+            <div class="text-muted">Lade Memory...</div>
+        </div>
+
+        <!-- GAME VIEW -->
+        <div id="view-game" class="view">
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <span class="text-muted text-sm" id="question-counter">0 / 0 Paare</span>
+                <span class="badge badge-accent" id="score-badge">0 Punkte</span>
+            </div>
+            <div class="timer" id="timer">90</div>
+
+            <div style="text-align: center; margin-bottom: 8px;">
+                <span class="text-muted text-sm">Versuche: <strong id="attempts-count">0</strong></span>
+            </div>
+
+            <div class="memory-grid" id="memory-grid"></div>
+
+            <div id="feedback-area" style="text-align: center; min-height: 48px; margin-bottom: 12px;"></div>
+        </div>
+
+        <!-- RESULTS VIEW -->
+        <div id="view-results" class="view">
+            <div class="header"><h1 id="results-emoji">🎉</h1></div>
+            <div class="score-display">
+                <div class="score-number" id="final-score">0</div>
+                <div class="score-label">Punkte</div>
+                <div class="score-percent" id="final-percent">0%</div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--success);" id="result-correct">0</div>
+                    <div class="text-muted text-sm">Paare</div>
+                </div>
+                <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--danger);" id="result-wrong">0</div>
+                    <div class="text-muted text-sm">Fehlversuche</div>
+                </div>
+                <div class="card" style="flex: 1; text-align: center; padding: 12px;">
+                    <div style="font-weight: 700;" id="result-time">0s</div>
+                    <div class="text-muted text-sm">Zeit</div>
+                </div>
+            </div>
+            <div class="section-title">Deine Antworten</div>
+            <div id="answer-review"></div>
+            <div class="section-title mt-24">Leaderboard</div>
+            <div id="leaderboard"><div class="text-muted text-sm text-center" style="padding: 12px;">Lade...</div></div>
+            <div class="mt-24" style="display: flex; gap: 8px;">
+                <button class="btn btn-primary" onclick="location.reload()" style="flex: 1;">Nochmal spielen</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/hub.html'" style="flex: 1;">Zurück zum Hub</button>
+            </div>
+        </div>
+
+        <!-- ERROR VIEW -->
+        <div id="view-error" class="view" style="align-items: center; justify-content: center;">
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 12px;">😕</div>
+                <div id="error-message" style="color: var(--danger); margin-bottom: 16px;"></div>
+                <button class="btn btn-secondary" onclick="window.location.href='/hub.html'">Zurück zum Hub</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js?v=4"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/game-engine.js"></script>
+    <script>
+        if (!Auth.requireLogin()) {}
+
+        let pairs = [];
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let totalPairs = 0;
+        let attempts = 0;
+        let locked = false;
+
+        const engine = new GameEngine({
+            onBuildReview(answers) {
+                document.getElementById('answer-review').innerHTML =
+                    `<div class="result-item">
+                        <span>Paare gefunden: ${engine.correctCount} / ${totalPairs}</span>
+                        <span class="text-muted text-sm">Versuche: ${attempts}</span>
+                    </div>`;
+            }
+        });
+
+        async function init() {
+            const gm = await engine.init();
+            if (!gm) return;
+
+            pairs = gm.config.pairs || [];
+            if (pairs.length === 0) { engine.showError('Keine Paare vorhanden.'); return; }
+
+            const settings = gm.config.settings || {};
+            totalPairs = pairs.length;
+            engine.totalItems = totalPairs;
+            engine.maxScore = totalPairs * (settings.pointsPerCorrect || 10);
+
+            // Create card array: each pair becomes 2 cards
+            cards = [];
+            pairs.forEach((pair, i) => {
+                cards.push({ pairID: i, text: pair.term, side: 'term' });
+                cards.push({ pairID: i, text: pair.match, side: 'match' });
+            });
+            cards = GameEngine.shuffleArray(cards);
+
+            renderGrid();
+
+            document.getElementById('question-counter').textContent = `0 / ${totalPairs} Paare`;
+
+            engine.showView('view-game');
+            const timeLimit = settings.timeLimit || 90;
+            engine.startTimer(timeLimit, () => {
+                if (matchedPairs < totalPairs) {
+                    engine.wrongCount = totalPairs - matchedPairs;
+                    engine.finishGame();
+                }
+            });
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('memory-grid');
+            // Determine columns: 4 for <= 12 cards, 3 for more
+            const cols = cards.length <= 12 ? 4 : 3;
+            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+            grid.innerHTML = cards.map((card, i) => `
+                <div class="memory-card" data-index="${i}" onclick="flipCard(this)">
+                    <div class="memory-card-inner">
+                        <div class="memory-card-front">?</div>
+                        <div class="memory-card-back">${GameEngine.escapeHTML(card.text)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function flipCard(el) {
+            if (locked) return;
+            const index = parseInt(el.dataset.index);
+            if (el.classList.contains('flipped') || el.classList.contains('matched')) return;
+
+            el.classList.add('flipped');
+            flippedCards.push({ el, index, card: cards[index] });
+
+            if (flippedCards.length === 2) {
+                locked = true;
+                attempts++;
+                document.getElementById('attempts-count').textContent = attempts;
+
+                const [a, b] = flippedCards;
+                if (a.card.pairID === b.card.pairID && a.card.side !== b.card.side) {
+                    // Match!
+                    matchedPairs++;
+                    engine.correctCount = matchedPairs;
+                    const settings = engine.gameModule.config.settings || {};
+                    const points = settings.pointsPerCorrect || 10;
+                    engine.addScore(points);
+
+                    a.el.classList.add('matched');
+                    b.el.classList.add('matched');
+
+                    engine.updateProgress(matchedPairs, totalPairs);
+                    document.getElementById('question-counter').textContent = `${matchedPairs} / ${totalPairs} Paare`;
+
+                    flippedCards = [];
+                    locked = false;
+
+                    if (matchedPairs === totalPairs) {
+                        engine.wrongCount = attempts - totalPairs;
+                        setTimeout(() => engine.finishGame(), 500);
+                    }
+                } else {
+                    // No match
+                    setTimeout(() => {
+                        a.el.classList.remove('flipped');
+                        b.el.classList.remove('flipped');
+                        flippedCards = [];
+                        locked = false;
+                    }, 800);
+                }
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
