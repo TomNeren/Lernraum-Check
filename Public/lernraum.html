@@ -16,24 +16,27 @@
         }
 
         .raum-card {
-            background: var(--bg-card);
-            border: 2px solid var(--border);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: var(--glass-border);
             border-radius: var(--radius);
             padding: 24px 12px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            box-shadow: var(--shadow-3d);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         .raum-card:hover {
-            border-color: var(--accent);
-            background: var(--bg-card-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(255, 107, 107, 0.12);
         }
 
         .raum-card.selected {
             border-color: var(--accent);
             background: var(--accent-glow);
-            box-shadow: 0 0 20px var(--accent-glow);
+            box-shadow: 0 0 0 2px var(--accent), var(--shadow-3d);
         }
 
         .raum-card .raum-icon {
@@ -55,12 +58,15 @@
         .custom-raum input {
             flex: 1;
             padding: 12px 16px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.5);
+            border: var(--glass-border);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             border-radius: var(--radius-sm);
             color: var(--text-primary);
             font-family: var(--font-sans);
             font-size: 1rem;
+            transition: border-color 0.2s;
         }
 
         .custom-raum input:focus {
@@ -78,11 +84,14 @@
             font-family: var(--font-sans);
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
         }
 
         .custom-raum button:hover {
             background: var(--accent-hover);
+            transform: scale(1.05);
+            box-shadow: 0 12px 28px rgba(255, 107, 107, 0.12);
         }
 
         @media (max-width: 360px) {
@@ -100,7 +109,7 @@
             <p class="subtitle">Wo lernst du heute?</p>
         </div>
 
-        <div class="raum-grid">
+        <div class="raum-grid glass-panel">
             <div class="raum-card" onclick="selectRaum('Klassenzimmer')">
                 <div class="raum-icon">🏫</div>
                 <div class="raum-label">Klassenzimmer</div>
@@ -115,10 +124,12 @@
             </div>
         </div>
 
-        <div class="section-title">Anderer Ort</div>
-        <div class="custom-raum">
-            <input type="text" id="custom-raum-input" placeholder="z.B. Bibliothek, Zuhause..." autocomplete="off">
-            <button onclick="submitCustomRaum()">OK</button>
+        <div class="glass-panel" style="margin-top: 12px;">
+            <div class="section-title" style="margin-top: 0;">Anderer Ort</div>
+            <div class="custom-raum" style="margin-bottom: 0;">
+                <input type="text" id="custom-raum-input" placeholder="z.B. Bibliothek, Zuhause..." autocomplete="off">
+                <button onclick="submitCustomRaum()">OK</button>
+            </div>
         </div>
 
         <div id="error-msg" style="color: var(--danger); font-size: 0.85rem; text-align: center; display: none;"></div>
