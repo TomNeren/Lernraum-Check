@@ -307,3 +307,23 @@ struct KlasseOverview: Content {
     var averageScore: Double
     var gamesPlayed: Int
 }
+
+// MARK: - Chat DTOs
+
+struct SendChatRequest: Content {
+    var playerID: UUID
+    var message: String
+}
+
+struct ChatMessageResponse: Content {
+    var id: UUID
+    var playerName: String
+    var klasse: String
+    var message: String
+    var createdAt: Date
+    var readAt: Date?
+}
+
+struct UnreadCountResponse: Content {
+    var count: Int
+}
