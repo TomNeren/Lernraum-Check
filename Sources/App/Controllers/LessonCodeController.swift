@@ -215,14 +215,11 @@ struct LessonCodeController: RouteCollection {
         let duration = input?.durationMinutes ?? 90
 
         // Deactivate any existing active codes for this class
-        let activeCodes = try await LessonCode.query(on: req.db)
+        try await LessonCode.query(on: req.db)
             .filter(\.$klasse.$id == klasseID)
             .filter(\.$active == true)
-            .all()
-        for code in activeCodes {
-            code.active = false
-            try await code.save(on: req.db)
-        }
+            .set(\.$active, to: false)
+            .update()
 
         // Generate unique code
         var code = generateCode()
@@ -253,14 +250,12 @@ struct LessonCodeController: RouteCollection {
             throw Abort(.badRequest)
         }
 
-        let activeCodes = try await LessonCode.query(on: req.db)
+        try await LessonCode.query(on: req.db)
             .filter(\.$klasse.$id == klasseID)
             .filter(\.$active == true)
-            .all()
-        for code in activeCodes {
-            code.active = false
-            try await code.save(on: req.db)
-        }
+            .set(\.$active, to: false)
+            .update()
+
         return .ok
     }
 
