@@ -289,11 +289,6 @@ struct TopicDetail: Content {
     var assignedTo: [String]  // klasse names
 }
 
-struct GameAssignmentInfo: Content {
-    var game: GameListItem
-    var assignedTo: [String]  // klasse names
-}
-
 struct KlasseListItem: Content {
     var id: UUID
     var name: String
