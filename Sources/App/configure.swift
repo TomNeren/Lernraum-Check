@@ -30,6 +30,7 @@ func configure(_ app: Application) throws {
     app.migrations.add(CreateKlasse())
     app.migrations.add(CreateLessonCode())
     app.migrations.add(CreateContentAssignment())
+    app.migrations.add(CreateChatMessage())
     try app.autoMigrate().wait()
 
     // --- Middleware ---

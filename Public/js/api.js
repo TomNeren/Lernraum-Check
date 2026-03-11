@@ -244,6 +244,35 @@ const API = {
         return this.request('GET', `/api/games/for/${playerID}`);
     },
 
+    // --- Chat ---
+    async sendChatMessage(playerID, message) {
+        return this.request('POST', '/api/chat/send', { playerID, message });
+    },
+
+    async getMyChatMessages(playerID) {
+        return this.request('GET', `/api/chat/my/${playerID}`);
+    },
+
+    async getAllChatMessages() {
+        return this.request('GET', '/api/chat/all');
+    },
+
+    async getChatMessagesByKlasse(klasse) {
+        return this.request('GET', `/api/chat/klasse/${encodeURIComponent(klasse)}`);
+    },
+
+    async getUnreadChatCount() {
+        return this.request('GET', '/api/chat/unread');
+    },
+
+    async markChatRead(messageID) {
+        return this.request('PUT', `/api/chat/${messageID}/read`);
+    },
+
+    async markAllChatRead() {
+        return this.request('POST', '/api/chat/read-all');
+    },
+
     // --- Health ---
     async health() {
         return this.request('GET', '/api/health');
