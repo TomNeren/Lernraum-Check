@@ -11,16 +11,16 @@ struct VocabController: RouteCollection {
         vocab.get("stats", ":playerID", use: getStats)
         vocab.get("topics", use: getTopics)
 
-        // Admin vocab management
-        let adminVocab = routes.grouped("api", "admin", "vocab")
+        // Admin vocab management — protected
+        let adminVocab = routes.grouped("api", "admin", "vocab").grouped(AdminAuthMiddleware())
         adminVocab.get("topics", use: adminGetTopics)
         adminVocab.get("topic", ":topicName", use: adminGetTopicItems)
         adminVocab.put("items", ":vocabID", use: adminUpdateItem)
         adminVocab.delete("items", ":vocabID", use: adminDeleteItem)
         adminVocab.delete("topic", ":topicName", use: adminDeleteTopic)
 
-        // Assignments
-        let assign = routes.grouped("api", "admin", "assign")
+        // Assignments — protected
+        let assign = routes.grouped("api", "admin", "assign").grouped(AdminAuthMiddleware())
         assign.post(use: assignContent)
         assign.delete(":assignmentID", use: removeAssignment)
         assign.get("game", ":gameID", use: getGameAssignments)

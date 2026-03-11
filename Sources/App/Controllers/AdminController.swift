@@ -5,15 +5,19 @@ struct AdminController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let admin = routes.grouped("api", "admin")
 
+        // Public: login (no auth required)
         admin.post("login", use: login)
-        admin.get("overview", use: getOverview)
-        admin.get("students", use: getAllStudents)
-        admin.get("students", ":playerID", "detail", use: getStudentDetail)
-        admin.get("klassen", use: getKlassen)
-        admin.delete("games", ":gameID", use: deleteGame)
-        admin.delete("students", ":playerID", use: deleteStudent)
-        admin.post("students", ":playerID", "checkout", use: forceCheckout)
-        admin.post("checkout-all", use: forceCheckoutAll)
+
+        // Protected: require admin token
+        let protected = admin.grouped(AdminAuthMiddleware())
+        protected.get("overview", use: getOverview)
+        protected.get("students", use: getAllStudents)
+        protected.get("students", ":playerID", "detail", use: getStudentDetail)
+        protected.get("klassen", use: getKlassen)
+        protected.delete("games", ":gameID", use: deleteGame)
+        protected.delete("students", ":playerID", use: deleteStudent)
+        protected.post("students", ":playerID", "checkout", use: forceCheckout)
+        protected.post("checkout-all", use: forceCheckoutAll)
     }
 
     // POST /api/admin/login

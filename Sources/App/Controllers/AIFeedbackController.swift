@@ -5,23 +5,23 @@ struct AIFeedbackController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let ai = routes.grouped("api", "ai")
 
-        // Generate feedback
-        ai.post("feedback", "game", use: generateGameFeedback)
-        ai.post("feedback", "vocab", use: generateVocabFeedback)
-        ai.post("feedback", "general", use: generateGeneralFeedback)
+        // Generate feedback — rate limited (5 requests per minute per IP)
+        let rateLimited = ai.grouped(RateLimitMiddleware(maxRequests: 5, windowSeconds: 60))
+        rateLimited.post("feedback", "game", use: generateGameFeedback)
+        rateLimited.post("feedback", "vocab", use: generateVocabFeedback)
+        rateLimited.post("feedback", "general", use: generateGeneralFeedback)
 
-        // Retrieve feedback
+        // Retrieve feedback (read-only, no rate limit needed)
         ai.get("feedback", "player", ":playerID", use: getPlayerFeedback)
         ai.get("feedback", "session", ":sessionID", use: getSessionFeedback)
         ai.get("feedback", ":feedbackID", use: getFeedback)
 
-        // Admin
-        ai.get("feedback", "all", use: getAllFeedback)
-        ai.get("feedback", "stats", use: getFeedbackStats)
-
-        // Config
-        ai.get("config", use: getAIConfig)
-        ai.post("config", use: updateAIConfig)
+        // Admin — protected
+        let protected = ai.grouped(AdminAuthMiddleware())
+        protected.get("feedback", "all", use: getAllFeedback)
+        protected.get("feedback", "stats", use: getFeedbackStats)
+        protected.get("config", use: getAIConfig)
+        protected.post("config", use: updateAIConfig)
     }
 
     // MARK: - Game Feedback

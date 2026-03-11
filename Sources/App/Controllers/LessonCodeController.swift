@@ -3,8 +3,8 @@ import Fluent
 
 struct LessonCodeController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
-        // Admin endpoints
-        let admin = routes.grouped("api", "admin")
+        // Admin endpoints — protected with admin auth
+        let admin = routes.grouped("api", "admin").grouped(AdminAuthMiddleware())
         admin.post("klassen", "create", use: createKlasse)
         admin.get("klassen", "list", use: listKlassen)
         admin.get("klassen", ":klasseID", "detail", use: getKlasseDetail)

@@ -7,7 +7,10 @@ struct GameController: RouteCollection {
         games.get(use: listGames)
         games.get("for", ":playerID", use: listGamesForPlayer)
         games.get(":gameID", use: getGame)
-        games.post(use: createGame)
+
+        // Protected: only admin can create games
+        let protectedGames = games.grouped(AdminAuthMiddleware())
+        protectedGames.post(use: createGame)
 
         let sessions = routes.grouped("api", "sessions")
         sessions.post(use: submitScore)

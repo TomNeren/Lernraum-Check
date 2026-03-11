@@ -5,7 +5,11 @@ struct PersonalTaskController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let personal = routes.grouped("api", "personal")
 
-        personal.post("assign", use: assignTask)
+        // Protected: only admin can assign tasks
+        let protected = personal.grouped(AdminAuthMiddleware())
+        protected.post("assign", use: assignTask)
+
+        // Student endpoints
         personal.get(":playerID", use: getOpenTasks)
         personal.post(":taskID", "complete", use: completeTask)
         personal.get(":playerID", "all", use: getAllTasks)

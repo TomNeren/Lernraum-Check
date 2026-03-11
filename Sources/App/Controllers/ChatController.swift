@@ -5,16 +5,18 @@ struct ChatController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let chat = routes.grouped("api", "chat")
 
-        // Student endpoints
-        chat.post("send", use: sendMessage)
+        // Student endpoints — rate limited (10 messages per minute)
+        let rateLimited = chat.grouped(RateLimitMiddleware(maxRequests: 10, windowSeconds: 60))
+        rateLimited.post("send", use: sendMessage)
         chat.get("my", ":playerID", use: getMyMessages)
 
-        // Admin endpoints
-        chat.get("all", use: getAllMessages)
-        chat.get("klasse", ":klasse", use: getMessagesByKlasse)
-        chat.get("unread", use: getUnreadCount)
-        chat.put(":messageID", "read", use: markAsRead)
-        chat.post("read-all", use: markAllAsRead)
+        // Admin endpoints — protected
+        let protected = chat.grouped(AdminAuthMiddleware())
+        protected.get("all", use: getAllMessages)
+        protected.get("klasse", ":klasse", use: getMessagesByKlasse)
+        protected.get("unread", use: getUnreadCount)
+        protected.put(":messageID", "read", use: markAsRead)
+        protected.post("read-all", use: markAllAsRead)
     }
 
     // MARK: - Student: Send a message

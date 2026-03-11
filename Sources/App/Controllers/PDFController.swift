@@ -5,17 +5,20 @@ struct PDFController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let pdf = routes.grouped("api", "pdf")
 
-        // Upload & Management
-        pdf.on(.POST, "upload", body: .collect(maxSize: "50mb"), use: uploadPDF)
+        // Public: read-only access
         pdf.get("list", use: listPDFs)
         pdf.get("category", ":category", use: listByCategory)
         pdf.get("klasse", ":klasse", use: listByKlasse)
         pdf.get(":pdfID", "info", use: getPDFInfo)
         pdf.get(":pdfID", "download", use: downloadPDF)
-        pdf.delete(":pdfID", use: deletePDF)
-        pdf.put(":pdfID", use: updatePDF)
         pdf.get("search", use: searchPDFs)
         pdf.get("stats", use: getPDFStats)
+
+        // Protected: admin-only (upload, delete, update)
+        let protected = pdf.grouped(AdminAuthMiddleware())
+        protected.on(.POST, "upload", body: .collect(maxSize: "50mb"), use: uploadPDF)
+        protected.delete(":pdfID", use: deletePDF)
+        protected.put(":pdfID", use: updatePDF)
     }
 
     // MARK: - Upload PDF

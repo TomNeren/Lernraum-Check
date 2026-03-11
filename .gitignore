@@ -18,6 +18,9 @@ cert.pem
 # Uploads storage
 Storage/
 
+# Database backups
+backups/
+
 # IDE
 .vscode/
 *.xcodeproj/

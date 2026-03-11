@@ -163,6 +163,7 @@ swift run App serve --hostname 0.0.0.0 --port 8090 &
 | PDF database | Done (new) |
 | AI feedback (Claude) | Done (needs API key) |
 | Glassmorphism UI | Done (new) |
-| CORS restriction | TODO |
-| Database backups | TODO |
-| Rate limiting | TODO |
+| CORS restriction | Done |
+| API authentication (admin) | Done |
+| Database backups | Done (script) |
+| Rate limiting | Done (chat + AI) |

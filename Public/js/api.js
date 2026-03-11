@@ -11,6 +11,11 @@ const API = {
             method,
             headers: { 'Content-Type': 'application/json' },
         };
+        // Include admin token if available
+        const token = sessionStorage.getItem('admin_token');
+        if (token) {
+            opts.headers['Authorization'] = `Bearer ${token}`;
+        }
         if (body) opts.body = JSON.stringify(body);
 
         const res = await fetch(`${this.base}${path}`, opts);
@@ -275,7 +280,10 @@ const API = {
 
     // --- PDF ---
     async uploadPDF(formData) {
-        const res = await fetch('/api/pdf/upload', { method: 'POST', body: formData });
+        const headers = {};
+        const token = sessionStorage.getItem('admin_token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch('/api/pdf/upload', { method: 'POST', body: formData, headers });
         if (!res.ok) { const e = await res.json().catch(() => ({ reason: res.statusText })); throw new Error(e.reason || `HTTP ${res.status}`); }
         return res.json();
     },
