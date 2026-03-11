@@ -124,21 +124,38 @@ struct LessonCodeController: RouteCollection {
         var created = 0
         var existing = 0
 
-        for rawName in input.names {
-            let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !name.isEmpty else { continue }
+        let cleanedNames = input.names
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
 
-            // Check if player already exists for this klasse
-            if let _ = try await Player.query(on: req.db)
-                .filter(\.$name == name)
-                .filter(\.$klasse == klasse.name)
-                .first() {
+        guard !cleanedNames.isEmpty else {
+            return AddStudentsResponse(created: 0, existing: 0)
+        }
+
+        let uniqueNames = Array(Set(cleanedNames))
+
+        // Fetch all relevant existing students for this class in a single query
+        let existingStudents = try await Player.query(on: req.db)
+            .filter(\.$klasse == klasse.name)
+            .filter(\.$name ~~ uniqueNames)
+            .all()
+
+        var existingNames = Set(existingStudents.map { $0.name })
+        var newPlayers: [Player] = []
+
+        for name in cleanedNames {
+            if existingNames.contains(name) {
                 existing += 1
             } else {
-                let player = Player(name: name, klasse: klasse.name)
-                try await player.save(on: req.db)
+                newPlayers.append(Player(name: name, klasse: klasse.name))
+                existingNames.insert(name) // Add to set to catch duplicates in the input array
                 created += 1
             }
+        }
+
+        // Bulk insert new players
+        if !newPlayers.isEmpty {
+            try await newPlayers.create(on: req.db)
         }
 
         return AddStudentsResponse(created: created, existing: existing)
