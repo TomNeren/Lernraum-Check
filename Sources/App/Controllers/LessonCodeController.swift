@@ -324,14 +324,11 @@ struct LessonCodeController: RouteCollection {
         try await player.save(on: req.db)
 
         // Check out from any existing checkins
-        let existingCheckins = try await LernraumCheckin.query(on: req.db)
+        try await LernraumCheckin.query(on: req.db)
             .filter(\.$player.$id == player.id!)
             .filter(\.$checkedOutAt == nil)
-            .all()
-        for checkin in existingCheckins {
-            checkin.checkedOutAt = Date()
-            try await checkin.save(on: req.db)
-        }
+            .set(\.$checkedOutAt, to: Date())
+            .update()
 
         // Create new checkin with class name as raum
         let checkin = LernraumCheckin(playerID: player.id!, raum: lessonCode.klasse.name)
