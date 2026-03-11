@@ -1,23 +1,12 @@
-127.0.0.1 - - [11/Mar/2026 13:29:20] "GET /lernraum.html HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:02] "GET /lernraum.html HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:02] "GET /css/style.css HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:02] "GET /js/api.js?v=4 HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:02] "GET /js/auth.js HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:02] "GET /images/klassenzimmer.jpg HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:02] "GET /images/pausenhof.jpg HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:02] "GET /images/arbeitsraum.jpg HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:03] "GET /index.html HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:16] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:16] "GET /css/style.css HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:16] "GET /js/api.js?v=4 HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:16] "GET /js/auth.js HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:16] "GET /lernraum.html HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:16] "GET /images/klassenzimmer.jpg HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:16] "GET /images/pausenhof.jpg HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:16] "GET /index.html HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:16] "GET /images/arbeitsraum.jpg HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:29] "GET /lernraum.html HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:29] "GET /css/style.css HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:29] "GET /images/klassenzimmer.jpg HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:29] "GET /images/pausenhof.jpg HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 13:30:29] "GET /images/arbeitsraum.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 20:44:15] "GET /hub.html HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 20:44:15] code 404, message File not found
+127.0.0.1 - - [11/Mar/2026 20:44:15] "GET /assets/scrabble-placeholder.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [11/Mar/2026 20:44:15] code 404, message File not found
+127.0.0.1 - - [11/Mar/2026 20:44:15] "GET /assets/door-placeholder.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [11/Mar/2026 20:44:15] "GET /css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 20:44:15] "GET /js/auth.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 20:44:15] "GET /js/api.js?v=5 HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 20:44:16] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 20:44:16] "GET /js/api.js?v=4 HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 20:44:16] "GET /index.html HTTP/1.1" 304 -
+127.0.0.1 - - [11/Mar/2026 20:44:16] "GET /lernraum.html HTTP/1.1" 200 -

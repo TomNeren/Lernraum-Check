@@ -4,49 +4,47 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Serif+Display&display=swap');
 
 :root {
-    /* Colors */
-    --bg-base: #ffffff;
+    /* Colors - Apple Inspired */
+    --bg-base: #F5F5F7;
+    --bg-white: #FFFFFF;
     --bg-primary: var(--bg-base);
-    --bg-secondary: rgba(255, 255, 255, 0.4);
-    --text-main: #2d3748;
+    --bg-secondary: rgba(255, 255, 255, 0.6);
+    --text-main: #1D1D1F;
     --text-primary: var(--text-main);
-    --text-secondary: #718096;
-    --text-muted: #718096;
-    --accent-red-soft: #ff6b6b;
-    --accent-red-transparent: rgba(255, 107, 107, 0.15);
+    --text-secondary: #86868B;
+    --text-muted: #86868B;
+    --accent-red-soft: #E02424;
+    --accent-red-transparent: rgba(224, 36, 36, 0.15);
     --accent: var(--accent-red-soft);
-    --accent-hover: #fa5252;
+    --accent-hover: #B91C1C;
     --accent-glow: var(--accent-red-transparent);
 
-    --success: #22c55e;
-    --success-bg: rgba(34, 197, 94, 0.12);
-    --warning: #f59e0b;
-    --warning-bg: rgba(245, 158, 11, 0.12);
-    --danger: #ef4444;
-    --danger-bg: rgba(239, 68, 68, 0.12);
+    --success: #34C759;
+    --success-bg: rgba(52, 199, 89, 0.12);
+    --warning: #FF9F0A;
+    --warning-bg: rgba(255, 159, 10, 0.12);
+    --danger: #FF3B30;
+    --danger-bg: rgba(255, 59, 48, 0.12);
 
-    /* Glassmorphism */
+    /* Glassmorphism - Premium Glossy */
     --glass-bg: rgba(255, 255, 255, 0.65);
-    --glass-border: 1px solid rgba(255, 107, 107, 0.2);
-    --glass-blur: blur(16px);
+    --glass-border: 1px solid rgba(0, 0, 0, 0.05);
+    --glass-blur: blur(20px) saturate(180%);
 
     /* 3D Shadows */
-    --shadow-soft: 0 8px 32px rgba(255, 107, 107, 0.05);
-    --shadow-3d:
-        0 4px 6px rgba(0,0,0,0.02),
-        0 10px 20px rgba(255, 107, 107, 0.08),
-        inset 0 1px 1px rgba(255,255,255,0.9);
+    --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.04);
+    --shadow-3d: 0 4px 24px rgba(0, 0, 0, 0.04);
 
     /* Legacy aliases (used in game files) */
     --bg-card: var(--glass-bg);
     --bg-card-hover: rgba(255, 255, 255, 0.8);
 
-    --border: rgba(255, 107, 107, 0.2);
+    --border: rgba(0, 0, 0, 0.05);
     --radius: 24px;
-    --radius-sm: 8px;
+    --radius-sm: 12px;
     --shadow: var(--shadow-3d);
-    --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-serif: 'DM Serif Display', Georgia, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 * {
@@ -58,13 +56,122 @@
 body {
     font-family: var(--font-sans);
     background-color: var(--bg-base);
-    background-image:
-        radial-gradient(circle at 15% 50%, var(--accent-red-transparent), transparent 50%),
-        radial-gradient(circle at 85% 30%, rgba(255, 107, 107, 0.1), transparent 50%);
-    background-attachment: fixed;
     color: var(--text-primary);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+}
+
+/* --- Hero Section --- */
+.hero-section {
+    width: 100%;
+    background: var(--bg-base);
+    padding: 60px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-content {
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    /* Golden Ratio approx 62% / 38% */
+    grid-template-columns: 62% 38%;
+    display: grid;
+}
+
+@media (max-width: 768px) {
+    .hero-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 24px;
+    }
+}
+
+.hero-text h1 {
+    font-size: 3.5rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    color: var(--text-main);
+    margin-bottom: 16px;
+}
+
+.hero-text p.subtitle {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.hero-image-placeholder img {
+    width: 100%;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    display: block;
+}
+
+/* --- Bento Grid & Cards --- */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    padding: 40px 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    .bento-grid {
+        grid-template-columns: 1fr;
+        padding: 24px 20px;
+    }
+}
+
+.bento-card {
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    padding: 32px;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+}
+
+.bento-card:hover {
+    transform: scale(1.015);
+    box-shadow: 0 10px 32px rgba(0,0,0,0.08);
+}
+
+.bento-card img {
+    max-width: 100%;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+}
+
+.bento-card h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+    color: var(--text-main);
+}
+
+.bento-card p {
+    font-size: 1rem;
+    color: var(--text-muted);
 }
 
 .glass-panel {
@@ -80,13 +187,13 @@ body {
 
 .glass-panel:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(255, 107, 107, 0.12);
+    box-shadow: 0 10px 32px rgba(0,0,0,0.08);
 }
 
 /* --- Layout --- */
 
 .container {
-    max-width: 480px;
+    max-width: 1000px;
     margin: 0 auto;
     padding: 24px 20px;
     min-height: 100vh;
@@ -101,14 +208,15 @@ body {
 
 .header h1 {
     font-family: var(--font-serif);
-    font-size: 2rem;
-    font-weight: 400;
-    margin-bottom: 4px;
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    margin-bottom: 8px;
 }
 
 .header .subtitle {
     color: var(--text-secondary);
-    font-size: 0.875rem;
+    font-size: 1.125rem;
 }
 
 /* --- Cards --- */
