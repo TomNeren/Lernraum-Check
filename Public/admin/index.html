@@ -450,11 +450,11 @@ environment | Umwelt | We must protect our environment."
             </div>
 
             <!-- Tab: Chat -->
-            <div class="tab-content" id="tab-chat">
+            <div class="tab-content glass-panel" id="tab-chat" style="padding: 16px; margin-top: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <div class="section-title" style="margin-bottom: 0;">Schüler-Nachrichten</div>
                     <div style="display: flex; gap: 8px;">
-                        <select id="chat-filter-klasse" onchange="loadChatMessages()" style="padding: 6px 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.8rem;">
+                        <select id="chat-filter-klasse" onchange="loadChatMessages()" style="padding: 6px 10px; background: rgba(255, 255, 255, 0.4); border: var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.8rem;">
                             <option value="">Alle Klassen</option>
                         </select>
                         <button class="btn btn-secondary" onclick="markAllChatAsRead()" style="font-size: 0.75rem; padding: 6px 12px;">Alle gelesen</button>
