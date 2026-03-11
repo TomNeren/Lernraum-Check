@@ -10,6 +10,8 @@ func routes(_ app: Application) throws {
     try app.register(collection: AdminController())
     try app.register(collection: LessonCodeController())
     try app.register(collection: ChatController())
+    try app.register(collection: PDFController())
+    try app.register(collection: AIFeedbackController())
 
     // Health-Check
     app.get("api", "health") { req -> String in

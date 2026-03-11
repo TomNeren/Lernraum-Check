@@ -8,7 +8,7 @@ func configure(_ app: Application) throws {
     loadDotEnv()
 
     // --- Upload limit ---
-    let maxUploadMB = Int(Environment.get("MAX_UPLOAD_MB") ?? "10") ?? 10
+    let maxUploadMB = Int(Environment.get("MAX_UPLOAD_MB") ?? "50") ?? 50
     app.routes.defaultMaxBodySize = ByteCount(stringLiteral: "\(maxUploadMB)mb")
 
     // --- Storage directory for uploads ---
@@ -31,6 +31,8 @@ func configure(_ app: Application) throws {
     app.migrations.add(CreateLessonCode())
     app.migrations.add(CreateContentAssignment())
     app.migrations.add(CreateChatMessage())
+    app.migrations.add(CreatePDFDocument())
+    app.migrations.add(CreateAIFeedback())
     try app.autoMigrate().wait()
 
     // --- Middleware ---

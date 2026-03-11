@@ -273,6 +273,78 @@ const API = {
         return this.request('POST', '/api/chat/read-all');
     },
 
+    // --- PDF ---
+    async uploadPDF(formData) {
+        const res = await fetch('/api/pdf/upload', { method: 'POST', body: formData });
+        if (!res.ok) { const e = await res.json().catch(() => ({ reason: res.statusText })); throw new Error(e.reason || `HTTP ${res.status}`); }
+        return res.json();
+    },
+
+    async listPDFs() {
+        return this.request('GET', '/api/pdf/list');
+    },
+
+    async listPDFsByCategory(category) {
+        return this.request('GET', `/api/pdf/category/${encodeURIComponent(category)}`);
+    },
+
+    async listPDFsByKlasse(klasse) {
+        return this.request('GET', `/api/pdf/klasse/${encodeURIComponent(klasse)}`);
+    },
+
+    async getPDFInfo(pdfID) {
+        return this.request('GET', `/api/pdf/${pdfID}/info`);
+    },
+
+    async deletePDF(pdfID) {
+        return this.request('DELETE', `/api/pdf/${pdfID}`);
+    },
+
+    async updatePDF(pdfID, data) {
+        return this.request('PUT', `/api/pdf/${pdfID}`, data);
+    },
+
+    async searchPDFs(query) {
+        return this.request('GET', `/api/pdf/search?q=${encodeURIComponent(query)}`);
+    },
+
+    async getPDFStats() {
+        return this.request('GET', '/api/pdf/stats');
+    },
+
+    // --- AI Feedback ---
+    async getGameFeedback(playerID, sessionID) {
+        return this.request('POST', '/api/ai/feedback/game', { playerID, sessionID });
+    },
+
+    async getVocabFeedback(playerID, difficultWords, totalReviewed, correctCount) {
+        return this.request('POST', '/api/ai/feedback/vocab', { playerID, difficultWords, totalReviewed, correctCount });
+    },
+
+    async getGeneralFeedback(playerID, question, context) {
+        return this.request('POST', '/api/ai/feedback/general', { playerID, question, context });
+    },
+
+    async getPlayerFeedbackHistory(playerID) {
+        return this.request('GET', `/api/ai/feedback/player/${playerID}`);
+    },
+
+    async getSessionFeedback(sessionID) {
+        return this.request('GET', `/api/ai/feedback/session/${sessionID}`);
+    },
+
+    async getAllFeedback() {
+        return this.request('GET', '/api/ai/feedback/all');
+    },
+
+    async getAIConfig() {
+        return this.request('GET', '/api/ai/config');
+    },
+
+    async testAIConnection() {
+        return this.request('POST', '/api/ai/config');
+    },
+
     // --- Health ---
     async health() {
         return this.request('GET', '/api/health');

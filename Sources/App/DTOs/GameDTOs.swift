@@ -327,3 +327,115 @@ struct ChatMessageResponse: Content {
 struct UnreadCountResponse: Content {
     var count: Int
 }
+
+// MARK: - PDF DTOs
+
+struct PDFUploadRequest: Content {
+    var title: String
+    var category: String
+    var klasse: String?
+    var subject: String?
+    var description: String?
+    var uploadedBy: String?
+    var file: File?
+}
+
+struct PDFUpdateRequest: Content {
+    var title: String?
+    var category: String?
+    var klasse: String?
+    var subject: String?
+    var description: String?
+}
+
+struct PDFDocumentResponse: Content {
+    var id: UUID
+    var title: String
+    var category: String
+    var klasse: String?
+    var subject: String?
+    var description: String?
+    var fileSize: Int
+    var uploadedBy: String
+    var createdAt: Date
+    var downloadURL: String
+
+    init(from doc: PDFDocument) {
+        self.id = doc.id!
+        self.title = doc.title
+        self.category = doc.category
+        self.klasse = doc.klasse
+        self.subject = doc.subject
+        self.description = doc.description
+        self.fileSize = doc.fileSize
+        self.uploadedBy = doc.uploadedBy
+        self.createdAt = doc.createdAt ?? Date()
+        self.downloadURL = "/api/pdf/\(doc.id!)/download"
+    }
+}
+
+struct PDFStatsResponse: Content {
+    var totalDocuments: Int
+    var totalSizeBytes: Int
+    var byCategory: [String: Int]
+}
+
+// MARK: - AI Feedback DTOs
+
+struct GameFeedbackRequest: Content {
+    var playerID: UUID
+    var sessionID: UUID
+}
+
+struct VocabFeedbackRequest: Content {
+    var playerID: UUID
+    var difficultWords: [DifficultWord]
+    var totalReviewed: Int
+    var correctCount: Int
+}
+
+struct DifficultWord: Content {
+    var english: String
+    var german: String
+    var example: String?
+}
+
+struct GeneralFeedbackRequest: Content {
+    var playerID: UUID
+    var question: String
+    var context: String?
+}
+
+struct AIFeedbackResponse: Content {
+    var id: UUID
+    var feedbackType: String
+    var text: String
+    var tips: [String]
+    var createdAt: Date
+}
+
+struct AIFeedbackListItem: Content {
+    var id: UUID
+    var playerName: String
+    var klasse: String
+    var feedbackType: String
+    var preview: String
+    var modelUsed: String
+    var createdAt: Date
+}
+
+struct AIFeedbackStats: Content {
+    var totalFeedbacks: Int
+    var byType: [String: Int]
+}
+
+struct AIConfigResponse: Content {
+    var isConfigured: Bool
+    var model: String
+    var maxTokens: Int
+}
+
+struct AIConfigTestResult: Content {
+    var success: Bool
+    var message: String
+}

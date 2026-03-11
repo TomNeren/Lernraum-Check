@@ -257,6 +257,8 @@
                 <button class="tab-btn" onclick="switchTab('live')">Live-Ansicht</button>
                 <button class="tab-btn" onclick="switchTab('games')">Spiele</button>
                 <button class="tab-btn" onclick="switchTab('vocab')">Vokabeln</button>
+                <button class="tab-btn" onclick="switchTab('pdfs')">PDFs</button>
+                <button class="tab-btn" onclick="switchTab('ai')">KI-Feedback</button>
                 <button class="tab-btn" onclick="switchTab('chat')" id="chat-tab-btn">Chat <span id="chat-unread-badge" style="display: none; background: var(--danger); color: #fff; font-size: 0.65rem; padding: 1px 6px; border-radius: 99px; margin-left: 4px;"></span></button>
                 <button class="tab-btn" onclick="switchTab('templates')">Vorlagen</button>
             </div>
@@ -463,6 +465,77 @@ environment | Umwelt | We must protect our environment."
                 <div id="chat-messages-admin">
                     <div class="text-muted text-sm text-center" style="padding: 20px;">Lade Nachrichten...</div>
                 </div>
+            </div>
+
+            <!-- Tab: PDFs -->
+            <div class="tab-content glass-panel" id="tab-pdfs" style="padding: 16px; margin-top: 16px;">
+                <div class="section-title">PDF hochladen</div>
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="input-group">
+                        <label>Titel</label>
+                        <input type="text" id="pdf-title" placeholder="z.B. Arbeitsblatt Unit 3">
+                    </div>
+                    <div class="input-group">
+                        <label>Kategorie</label>
+                        <select id="pdf-category" style="width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.5); border: var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans);">
+                            <option value="arbeitsblatt">Arbeitsblatt</option>
+                            <option value="loesung">Lösung</option>
+                            <option value="material">Material</option>
+                            <option value="test">Test/Klausur</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <div class="input-group" style="flex: 1;">
+                            <label>Klasse (optional)</label>
+                            <select id="pdf-klasse" style="width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.5); border: var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans);">
+                                <option value="">Alle Klassen</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="flex: 1;">
+                            <label>Fach (optional)</label>
+                            <input type="text" id="pdf-subject" placeholder="z.B. Englisch">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Beschreibung (optional)</label>
+                        <input type="text" id="pdf-description" placeholder="Kurze Beschreibung...">
+                    </div>
+                    <div class="input-group">
+                        <label>PDF-Datei</label>
+                        <input type="file" id="pdf-file" accept=".pdf" style="padding: 10px; background: rgba(255,255,255,0.5); border: var(--glass-border); border-radius: var(--radius-sm); width: 100%;">
+                    </div>
+                    <div id="pdf-upload-status" style="margin-bottom: 8px;"></div>
+                    <button class="btn btn-primary" onclick="uploadPDF()">Hochladen</button>
+                </div>
+
+                <div class="section-title">PDF-Bibliothek</div>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+                    <select id="pdf-filter-category" onchange="loadPDFs()" style="padding: 6px 10px; background: rgba(255,255,255,0.4); border: var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.8rem;">
+                        <option value="">Alle Kategorien</option>
+                        <option value="arbeitsblatt">Arbeitsblätter</option>
+                        <option value="loesung">Lösungen</option>
+                        <option value="material">Material</option>
+                        <option value="test">Tests</option>
+                    </select>
+                    <input type="text" id="pdf-search" placeholder="Suchen..." oninput="loadPDFs()" style="padding: 6px 10px; background: rgba(255,255,255,0.4); border: var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.8rem; flex: 1;">
+                </div>
+                <div id="pdf-list">
+                    <div class="text-muted text-sm text-center" style="padding: 20px;">Lade PDFs...</div>
+                </div>
+                <div id="pdf-stats-bar" style="margin-top: 12px; font-size: 0.75rem; color: var(--text-muted);"></div>
+            </div>
+
+            <!-- Tab: AI Feedback -->
+            <div class="tab-content glass-panel" id="tab-ai" style="padding: 16px; margin-top: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div class="section-title" style="margin-bottom: 0;">KI-Feedback Übersicht</div>
+                    <button class="btn btn-secondary" onclick="testAIConnection()" style="font-size: 0.75rem; padding: 6px 12px;">Verbindung testen</button>
+                </div>
+                <div id="ai-config-status" style="margin-bottom: 16px;"></div>
+                <div id="ai-feedback-list">
+                    <div class="text-muted text-sm text-center" style="padding: 20px;">Lade Feedback-Daten...</div>
+                </div>
+                <div id="ai-stats-bar" style="margin-top: 12px; font-size: 0.75rem; color: var(--text-muted);"></div>
             </div>
 
             <!-- Tab: Templates -->
@@ -776,6 +849,7 @@ climate change | Klimawandel | Climate change affects everyone.</div>
                 loadKlassen();
                 loadVocabTopics();
                 populateChatKlasseFilter(ov.klassen);
+                populatePDFKlasseFilter(ov.klassen);
                 loadChatMessages();
             } catch (e) {
                 console.error('Dashboard laden fehlgeschlagen:', e);
@@ -1117,6 +1191,12 @@ climate change | Klimawandel | Climate change affects everyone.</div>
             if (tabName === 'chat') {
                 loadChatMessages();
                 loadChatUnreadCount();
+            }
+            if (tabName === 'pdfs') {
+                loadPDFs();
+            }
+            if (tabName === 'ai') {
+                loadAIFeedback();
             }
         }
 
@@ -1626,6 +1706,177 @@ climate change | Klimawandel | Climate change affects everyone.</div>
         // Load chat unread count periodically
         loadChatUnreadCount();
         setInterval(loadChatUnreadCount, 30000);
+
+        // --- PDFs ---
+        async function uploadPDF() {
+            const title = document.getElementById('pdf-title').value.trim();
+            const file = document.getElementById('pdf-file').files[0];
+            const status = document.getElementById('pdf-upload-status');
+
+            if (!title || !file) {
+                status.innerHTML = '<span style="color: var(--danger);">Titel und PDF-Datei erforderlich.</span>';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('category', document.getElementById('pdf-category').value);
+            formData.append('file', file);
+            const klasse = document.getElementById('pdf-klasse').value;
+            if (klasse) formData.append('klasse', klasse);
+            const subject = document.getElementById('pdf-subject').value.trim();
+            if (subject) formData.append('subject', subject);
+            const desc = document.getElementById('pdf-description').value.trim();
+            if (desc) formData.append('description', desc);
+
+            status.innerHTML = '<span style="color: var(--accent);">Lade hoch...</span>';
+            try {
+                await API.uploadPDF(formData);
+                status.innerHTML = '<span style="color: var(--success);">PDF erfolgreich hochgeladen!</span>';
+                document.getElementById('pdf-title').value = '';
+                document.getElementById('pdf-file').value = '';
+                document.getElementById('pdf-description').value = '';
+                document.getElementById('pdf-subject').value = '';
+                loadPDFs();
+            } catch (e) {
+                status.innerHTML = '<span style="color: var(--danger);">Fehler: ' + esc(e.message) + '</span>';
+            }
+        }
+
+        async function loadPDFs() {
+            const container = document.getElementById('pdf-list');
+            const category = document.getElementById('pdf-filter-category').value;
+            const search = document.getElementById('pdf-search').value.trim();
+
+            try {
+                let pdfs;
+                if (search) {
+                    pdfs = await API.searchPDFs(search);
+                } else if (category) {
+                    pdfs = await API.listPDFsByCategory(category);
+                } else {
+                    pdfs = await API.listPDFs();
+                }
+
+                if (pdfs.length === 0) {
+                    container.innerHTML = '<div class="text-muted text-sm text-center" style="padding: 20px;">Keine PDFs vorhanden</div>';
+                    return;
+                }
+
+                const categoryLabels = { arbeitsblatt: 'Arbeitsblatt', loesung: 'Lösung', material: 'Material', test: 'Test' };
+                container.innerHTML = pdfs.map(pdf => {
+                    const size = pdf.fileSize > 1048576 ? (pdf.fileSize / 1048576).toFixed(1) + ' MB' : (pdf.fileSize / 1024).toFixed(0) + ' KB';
+                    const date = new Date(pdf.createdAt).toLocaleDateString('de-DE');
+                    return `
+                        <div class="card" style="padding: 12px 16px; margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div>
+                                    <span style="font-weight: 700; font-size: 0.9rem;">📄 ${esc(pdf.title)}</span>
+                                    <div style="margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap;">
+                                        <span class="badge">${categoryLabels[pdf.category] || pdf.category}</span>
+                                        ${pdf.klasse ? '<span class="badge">' + esc(pdf.klasse) + '</span>' : ''}
+                                        ${pdf.subject ? '<span class="badge">' + esc(pdf.subject) + '</span>' : ''}
+                                        <span style="font-size: 0.7rem; color: var(--text-muted);">${size} · ${date}</span>
+                                    </div>
+                                    ${pdf.description ? '<div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">' + esc(pdf.description) + '</div>' : ''}
+                                </div>
+                                <div style="display: flex; gap: 6px;">
+                                    <a href="${pdf.downloadURL}" target="_blank" style="background: var(--accent); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; text-decoration: none; font-weight: 600;">Download</a>
+                                    <button onclick="deletePDFItem('${pdf.id}')" style="background: none; border: 1px solid var(--danger); color: var(--danger); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Löschen</button>
+                                </div>
+                            </div>
+                        </div>`;
+                }).join('');
+
+                // Load stats
+                const stats = await API.getPDFStats();
+                const totalSize = stats.totalSizeBytes > 1048576 ? (stats.totalSizeBytes / 1048576).toFixed(1) + ' MB' : (stats.totalSizeBytes / 1024).toFixed(0) + ' KB';
+                document.getElementById('pdf-stats-bar').textContent = `${stats.totalDocuments} Dokumente · ${totalSize} Speicher`;
+            } catch (e) {
+                container.innerHTML = '<div class="text-muted text-sm text-center" style="padding: 20px;">Fehler: ' + esc(e.message) + '</div>';
+            }
+        }
+
+        async function deletePDFItem(pdfID) {
+            if (!confirm('PDF wirklich löschen?')) return;
+            try {
+                await API.deletePDF(pdfID);
+                loadPDFs();
+            } catch (e) {
+                alert('Fehler: ' + e.message);
+            }
+        }
+
+        function populatePDFKlasseFilter(klassen) {
+            const select = document.getElementById('pdf-klasse');
+            if (!select) return;
+            klassen.forEach(k => {
+                const opt = document.createElement('option');
+                opt.value = k;
+                opt.textContent = k;
+                select.appendChild(opt);
+            });
+        }
+
+        // --- AI Feedback ---
+        async function loadAIFeedback() {
+            const container = document.getElementById('ai-feedback-list');
+            const configStatus = document.getElementById('ai-config-status');
+
+            try {
+                // Check config
+                const config = await API.getAIConfig();
+                if (config.isConfigured) {
+                    configStatus.innerHTML = '<div style="padding: 8px 12px; background: var(--success-bg); border-radius: var(--radius-sm); font-size: 0.8rem;">✅ KI verbunden — Modell: ' + esc(config.model) + ' · Max Tokens: ' + config.maxTokens + '</div>';
+                } else {
+                    configStatus.innerHTML = '<div style="padding: 8px 12px; background: var(--warning-bg); border-radius: var(--radius-sm); font-size: 0.8rem;">⚠️ Kein API-Key konfiguriert — Fallback-Modus aktiv. Setze CLAUDE_API_KEY in .env</div>';
+                }
+
+                // Load feedback list
+                const feedbacks = await API.getAllFeedback();
+                if (feedbacks.length === 0) {
+                    container.innerHTML = '<div class="text-muted text-sm text-center" style="padding: 20px;">Noch keine KI-Feedbacks generiert. Feedbacks werden automatisch erstellt wenn Schüler Spiele spielen.</div>';
+                    return;
+                }
+
+                const typeLabels = { game_review: '🎮 Spiel', vocab_tip: '📚 Vokabel', general: '💬 Allgemein', error_analysis: '🔍 Analyse' };
+                container.innerHTML = feedbacks.map(fb => {
+                    const time = new Date(fb.createdAt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    return `
+                        <div class="card" style="padding: 12px 16px; margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div>
+                                    <span style="font-weight: 700; font-size: 0.85rem;">${esc(fb.playerName)}</span>
+                                    <span class="badge" style="font-size: 0.65rem; margin-left: 6px;">${esc(fb.klasse)}</span>
+                                    <span style="font-size: 0.75rem; margin-left: 6px;">${typeLabels[fb.feedbackType] || fb.feedbackType}</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span class="text-muted" style="font-size: 0.7rem;">${time}</span><br>
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">${esc(fb.modelUsed)}</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 6px; font-size: 0.82rem; color: var(--text-secondary);">${esc(fb.preview)}${fb.preview.length >= 100 ? '...' : ''}</div>
+                        </div>`;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<div class="text-muted text-sm text-center" style="padding: 20px;">Fehler: ' + esc(e.message) + '</div>';
+            }
+        }
+
+        async function testAIConnection() {
+            const status = document.getElementById('ai-config-status');
+            status.innerHTML = '<div style="padding: 8px 12px; background: var(--accent-glow); border-radius: var(--radius-sm); font-size: 0.8rem;">⏳ Teste Verbindung...</div>';
+            try {
+                const result = await API.testAIConnection();
+                if (result.success) {
+                    status.innerHTML = '<div style="padding: 8px 12px; background: var(--success-bg); border-radius: var(--radius-sm); font-size: 0.8rem;">✅ ' + esc(result.message) + '</div>';
+                } else {
+                    status.innerHTML = '<div style="padding: 8px 12px; background: var(--danger-bg); border-radius: var(--radius-sm); font-size: 0.8rem;">❌ ' + esc(result.message) + '</div>';
+                }
+            } catch (e) {
+                status.innerHTML = '<div style="padding: 8px 12px; background: var(--danger-bg); border-radius: var(--radius-sm); font-size: 0.8rem;">❌ Fehler: ' + esc(e.message) + '</div>';
+            }
+        }
 
         // --- Utility ---
         function esc(str) {
