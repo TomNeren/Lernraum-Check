@@ -205,6 +205,9 @@ class GameEngine {
             this.onBuildReview(this.answers);
         }
 
+        // KI-Feedback anfordern (async, non-blocking)
+        this.requestAIFeedback();
+
         // Leaderboard
         this.loadLeaderboard();
     }
@@ -237,13 +240,57 @@ class GameEngine {
         }
     }
 
+    // --- KI-Feedback ---
+    async requestAIFeedback() {
+        try {
+            const playerID = Auth.getPlayerID();
+            if (!playerID) return;
+
+            // Get session ID from last submitted score
+            const sessions = await API.getPlayerSessions(playerID);
+            if (!sessions || sessions.length === 0) return;
+            const lastSession = sessions[0];
+
+            const feedback = await API.getGameFeedback(playerID, lastSession.id);
+            if (!feedback || !feedback.text) return;
+
+            // Show feedback in results view
+            let fbContainer = document.getElementById('ai-feedback-result');
+            if (!fbContainer) {
+                fbContainer = document.createElement('div');
+                fbContainer.id = 'ai-feedback-result';
+                fbContainer.style.cssText = 'margin-top: 16px; padding: 16px; background: var(--glass-bg, rgba(255,255,255,0.65)); border: var(--glass-border, 1px solid rgba(255,107,107,0.2)); border-radius: var(--radius-sm, 8px); box-shadow: var(--shadow-soft, none);';
+
+                const resultsView = document.getElementById('view-results');
+                if (resultsView) {
+                    const leaderboard = resultsView.querySelector('.section-title');
+                    if (leaderboard) {
+                        leaderboard.parentNode.insertBefore(fbContainer, leaderboard);
+                    } else {
+                        resultsView.appendChild(fbContainer);
+                    }
+                }
+            }
+
+            fbContainer.innerHTML = `
+                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 8px;">🤖 KI-Lerntipp</div>
+                <div style="font-size: 0.85rem; line-height: 1.6;">${GameEngine.escapeHTML(feedback.text)}</div>
+                ${feedback.tips && feedback.tips.length > 0 ? feedback.tips.map(t =>
+                    '<div style="margin-top: 6px; padding: 6px 10px; background: var(--accent-glow, rgba(255,107,107,0.15)); border-radius: 6px; font-size: 0.82rem;">💡 ' + GameEngine.escapeHTML(t) + '</div>'
+                ).join('') : ''}
+            `;
+        } catch (e) {
+            console.log('KI-Feedback konnte nicht geladen werden:', e.message);
+        }
+    }
+
     // --- Konfetti ---
     showConfetti() {
         const container = document.createElement('div');
         container.className = 'confetti-container';
         document.body.appendChild(container);
 
-        const colors = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#818cf8', '#fbbf24'];
+        const colors = ['#ff6b6b', '#22c55e', '#f59e0b', '#fa5252', '#ff8787', '#fbbf24'];
         for (let i = 0; i < 60; i++) {
             const piece = document.createElement('div');
             piece.className = 'confetti-piece';

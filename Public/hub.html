@@ -16,9 +16,9 @@
         </div>
 
         <!-- Lernraum Badge -->
-        <div id="raum-badge" style="display: flex; align-items: center; justify-content: space-between; background: var(--accent-glow); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 10px 16px; margin-bottom: 16px;">
+        <div id="raum-badge" class="glass-panel" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; margin-bottom: 16px;">
             <span id="raum-text" style="font-weight: 600; font-size: 0.9rem;"></span>
-            <button onclick="window.location.href='/lernraum.html'" style="background: none; border: 1px solid var(--accent); color: var(--accent); padding: 4px 12px; border-radius: 99px; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 600; cursor: pointer;">Raum wechseln</button>
+            <button onclick="window.location.href='/lernraum.html'" style="background: rgba(255,255,255,0.5); border: var(--glass-border); color: var(--accent); padding: 4px 12px; border-radius: 99px; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 600; cursor: pointer; box-shadow: var(--shadow-soft);">Raum wechseln</button>
         </div>
 
         <!-- Player Stats -->
@@ -38,15 +38,28 @@
         </div>
 
         <!-- Persönliche Aufgaben -->
-        <div id="tasks-section" style="display: none;">
-            <div class="section-title">Deine Aufgaben</div>
+        <div id="tasks-section" class="glass-panel" style="display: none; margin-bottom: 16px;">
+            <div class="section-title" style="margin-top: 0;">Deine Aufgaben</div>
             <div id="tasks-list"></div>
         </div>
 
+        <!-- KI-Feedback -->
+        <div id="ai-feedback-section" class="glass-panel" style="display: none; margin-bottom: 16px;">
+            <div class="section-title" style="margin-top: 0;">🤖 Dein KI-Lerntipp</div>
+            <div id="ai-feedback-content" style="font-size: 0.9rem; line-height: 1.6;"></div>
+            <div id="ai-feedback-tips" style="margin-top: 8px;"></div>
+        </div>
+
+        <!-- PDF-Materialien -->
+        <div id="pdf-section" class="glass-panel" style="display: none; margin-bottom: 16px;">
+            <div class="section-title" style="margin-top: 0;">📄 Deine Materialien</div>
+            <div id="pdf-student-list"></div>
+        </div>
+
         <!-- Vokabeltrainer -->
-        <div id="vocab-section" style="display: none;">
-            <div class="section-title">Dein Vokabeltraining</div>
-            <div class="card card-clickable" onclick="window.location.href='/games/vocab-srs.html'" style="border-color: var(--accent); background: var(--accent-glow);">
+        <div id="vocab-section" class="glass-panel" style="display: none; margin-bottom: 16px;">
+            <div class="section-title" style="margin-top: 0;">Dein Vokabeltraining</div>
+            <div class="card card-clickable" onclick="window.location.href='/games/vocab-srs.html'" style="border-color: var(--accent); background: var(--accent-glow); margin-bottom: 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <h3>📚 Vokabeltrainer</h3>
@@ -58,9 +71,11 @@
         </div>
 
         <!-- Games List -->
-        <div class="section-title">Verfügbare Spiele</div>
-        <div id="games-list">
-            <div class="text-muted text-sm text-center" style="padding: 20px;">Lade Spiele...</div>
+        <div class="glass-panel">
+            <div class="section-title" style="margin-top: 0;">Verfügbare Spiele</div>
+            <div id="games-list">
+                <div class="text-muted text-sm text-center" style="padding: 20px;">Lade Spiele...</div>
+            </div>
         </div>
 
         <!-- Empty State -->
@@ -79,7 +94,108 @@
         </div>
     </div>
 
-    <script src="/js/api.js?v=4"></script>
+    <!-- Chat FAB Button -->
+    <button id="chat-fab" onclick="toggleChat()" style="
+        position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
+        border-radius: 50%; background: var(--accent); color: #fff; border: none;
+        font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        z-index: 1000; display: flex; align-items: center; justify-content: center;
+        transition: transform 0.2s;
+    ">
+        <span id="chat-fab-icon">💬</span>
+        <span id="chat-fab-badge" style="
+            display: none; position: absolute; top: -2px; right: -2px;
+            background: var(--danger); color: #fff; font-size: 0.65rem;
+            min-width: 18px; height: 18px; border-radius: 50%;
+            display: none; align-items: center; justify-content: center;
+            font-weight: 700;
+        "></span>
+    </button>
+
+    <!-- Chat Panel -->
+    <div id="chat-panel" style="
+        display: none; position: fixed; bottom: 90px; right: 16px; left: 16px;
+        max-width: 400px; margin-left: auto;
+        background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+        border: var(--glass-border);
+        border-radius: var(--radius); box-shadow: var(--shadow-3d);
+        z-index: 999; overflow: hidden;
+    ">
+        <div style="padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 700; font-size: 0.95rem;">Nachricht an Lehrkraft</span>
+            <button onclick="toggleChat()" style="background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer;">&times;</button>
+        </div>
+
+        <!-- Quick messages -->
+        <div style="padding: 12px 16px 4px; display: flex; flex-wrap: wrap; gap: 6px;">
+            <button class="chat-quick-btn" onclick="sendQuickMessage('Ich brauche Hilfe')">Brauche Hilfe</button>
+            <button class="chat-quick-btn" onclick="sendQuickMessage('Mein Computer funktioniert nicht')">PC-Problem</button>
+            <button class="chat-quick-btn" onclick="sendQuickMessage('Ich bin fertig')">Fertig</button>
+            <button class="chat-quick-btn" onclick="sendQuickMessage('Ich verstehe die Aufgabe nicht')">Frage zur Aufgabe</button>
+        </div>
+
+        <!-- Message history -->
+        <div id="chat-messages" style="
+            padding: 12px 16px; max-height: 200px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 8px;
+        ">
+            <div class="text-muted text-sm text-center" style="padding: 8px;">Noch keine Nachrichten</div>
+        </div>
+
+        <!-- Input -->
+        <div style="padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px;">
+            <input type="text" id="chat-input" placeholder="Nachricht schreiben..."
+                maxlength="500"
+                onkeydown="if(event.key==='Enter')sendChatMessage()"
+                style="flex: 1; padding: 10px 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 99px; color: var(--text-primary); font-family: var(--font-sans); font-size: 0.85rem; outline: none;">
+            <button onclick="sendChatMessage()" style="
+                background: var(--accent); color: #fff; border: none;
+                width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 1.1rem;
+            ">&#10148;</button>
+        </div>
+    </div>
+
+    <style>
+        .chat-quick-btn {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.5);
+            border: var(--glass-border);
+            border-radius: 99px;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .chat-quick-btn:hover {
+            background: var(--accent-glow);
+            border-color: var(--accent);
+        }
+        .chat-msg {
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            max-width: 85%;
+            word-break: break-word;
+        }
+        .chat-msg-own {
+            background: var(--accent);
+            color: #fff;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-msg-time {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        #chat-fab:hover { transform: scale(1.1); }
+    </style>
+
+    <script src="/js/api.js?v=5"></script>
     <script src="/js/auth.js"></script>
     <script>
         if (!Auth.requireLogin()) { /* redirected */ }
@@ -270,10 +386,111 @@
             window.location.href = '/';
         }
 
+        // --- Chat ---
+        let chatOpen = false;
+
+        function toggleChat() {
+            chatOpen = !chatOpen;
+            document.getElementById('chat-panel').style.display = chatOpen ? 'block' : 'none';
+            if (chatOpen) loadChatMessages();
+        }
+
+        async function loadChatMessages() {
+            const container = document.getElementById('chat-messages');
+            try {
+                const messages = await API.getMyChatMessages(player.id);
+                if (messages.length === 0) {
+                    container.innerHTML = '<div class="text-muted text-sm text-center" style="padding: 8px;">Noch keine Nachrichten</div>';
+                    return;
+                }
+                container.innerHTML = messages.reverse().map(msg => {
+                    const time = new Date(msg.createdAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                    const readIcon = msg.readAt ? ' &#10003;' : '';
+                    return `<div class="chat-msg chat-msg-own">${escapeHtml(msg.message)}<div class="chat-msg-time" style="color: rgba(255,255,255,0.7);">${time}${readIcon}</div></div>`;
+                }).join('');
+                container.scrollTop = container.scrollHeight;
+            } catch (e) {
+                container.innerHTML = '<div class="text-muted text-sm text-center" style="padding: 8px;">Laden fehlgeschlagen</div>';
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            input.value = '';
+            try {
+                await API.sendChatMessage(player.id, msg);
+                loadChatMessages();
+            } catch (e) {
+                alert('Nachricht konnte nicht gesendet werden: ' + e.message);
+            }
+        }
+
+        async function sendQuickMessage(text) {
+            try {
+                await API.sendChatMessage(player.id, text);
+                loadChatMessages();
+                if (!chatOpen) toggleChat();
+            } catch (e) {
+                alert('Nachricht konnte nicht gesendet werden: ' + e.message);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // --- PDF Materialien ---
+        async function loadStudentPDFs() {
+            try {
+                const pdfs = await API.listPDFsByKlasse(player.klasse);
+                if (pdfs.length === 0) return;
+
+                document.getElementById('pdf-section').style.display = '';
+                const container = document.getElementById('pdf-student-list');
+                container.innerHTML = pdfs.map(pdf => {
+                    const categoryIcons = { arbeitsblatt: '📝', loesung: '✅', material: '📖', test: '📋' };
+                    const icon = categoryIcons[pdf.category] || '📄';
+                    return `
+                        <a href="${pdf.downloadURL}" target="_blank" class="card card-clickable" style="text-decoration: none; color: inherit; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-weight: 600;">${icon} ${escapeHtml(pdf.title)}</span>
+                                ${pdf.subject ? '<span class="badge" style="margin-left: 6px; font-size: 0.65rem;">' + escapeHtml(pdf.subject) + '</span>' : ''}
+                            </div>
+                            <span style="color: var(--accent); font-size: 0.8rem; font-weight: 600;">Öffnen →</span>
+                        </a>`;
+                }).join('');
+            } catch (e) { /* ignore */ }
+        }
+
+        // --- KI-Feedback ---
+        async function loadLatestFeedback() {
+            try {
+                const feedbacks = await API.getPlayerFeedbackHistory(player.id);
+                if (feedbacks.length === 0) return;
+
+                const latest = feedbacks[0];
+                document.getElementById('ai-feedback-section').style.display = '';
+                document.getElementById('ai-feedback-content').textContent = latest.text;
+
+                if (latest.tips && latest.tips.length > 0) {
+                    document.getElementById('ai-feedback-tips').innerHTML = latest.tips.map(t =>
+                        '<div style="padding: 6px 10px; background: var(--accent-glow); border-radius: var(--radius-sm); font-size: 0.82rem; margin-bottom: 4px;">💡 ' + escapeHtml(t) + '</div>'
+                    ).join('');
+                }
+            } catch (e) { /* ignore */ }
+        }
+
         loadStats();
         loadGames();
         loadVocabStats();
         loadTasks();
+        loadStudentPDFs();
+        loadLatestFeedback();
     </script>
 </body>
 </html>
