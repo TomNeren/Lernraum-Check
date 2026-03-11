@@ -36,12 +36,12 @@ func configure(_ app: Application) throws {
     try app.autoMigrate().wait()
 
     // --- Middleware ---
-    // CORS — restrict to production domain (fallback to .all for local dev)
+    // CORS — restrict in production via CORS_ORIGIN env var, permissive by default for local dev
     let allowedOrigin: CORSMiddleware.AllowOriginSetting
     if let corsOrigin = Environment.get("CORS_ORIGIN") {
         allowedOrigin = .custom(corsOrigin)
     } else {
-        allowedOrigin = .custom("https://srl.infotore.cc")
+        allowedOrigin = .all
     }
     let corsConfig = CORSMiddleware.Configuration(
         allowedOrigin: allowedOrigin,

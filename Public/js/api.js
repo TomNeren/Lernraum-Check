@@ -21,6 +21,13 @@ const API = {
         const res = await fetch(`${this.base}${path}`, opts);
 
         if (!res.ok) {
+            // On 401, clear stale token and redirect to login
+            if (res.status === 401 && sessionStorage.getItem('admin_token')) {
+                sessionStorage.removeItem('admin_token');
+                if (window.location.pathname.startsWith('/admin')) {
+                    window.location.reload();
+                }
+            }
             const error = await res.json().catch(() => ({ reason: res.statusText }));
             throw new Error(error.reason || `HTTP ${res.status}`);
         }
