@@ -37,6 +37,10 @@
         0 10px 20px rgba(255, 107, 107, 0.08),
         inset 0 1px 1px rgba(255,255,255,0.9);
 
+    /* Legacy aliases (used in game files) */
+    --bg-card: var(--glass-bg);
+    --bg-card-hover: rgba(255, 255, 255, 0.8);
+
     --border: rgba(255, 107, 107, 0.2);
     --radius: 24px;
     --radius-sm: 8px;

@@ -31,8 +31,11 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: var(--bg-card);
-            border: 2px solid var(--border);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: var(--glass-border);
+            box-shadow: var(--shadow-3d);
             border-radius: var(--radius);
             padding: 24px;
             text-align: center;
@@ -76,7 +79,7 @@
         }
         .rating-btn:active { transform: scale(0.96); }
         .rating-nochmal { background: var(--danger); color: white; }
-        .rating-schwer { background: var(--warning); color: #0a0a0f; }
+        .rating-schwer { background: var(--warning); color: white; }
         .rating-gut { background: var(--success); color: white; }
         .rating-leicht { background: var(--accent); color: white; }
         .box-bars {
@@ -108,8 +111,9 @@
             margin-top: 2px;
         }
         .summary-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
+            background: var(--glass-bg);
+            border: var(--glass-border);
+            box-shadow: var(--shadow-3d);
             border-radius: var(--radius);
             padding: 20px;
             text-align: center;
