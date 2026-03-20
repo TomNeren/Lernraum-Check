@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LernHub — Kompetenzen & Materialien</title>
+    <link rel="stylesheet" href="/css/style.css?v=9">
+    <style>
+        /* === Materials Bento Layout === */
+        .mat-hero {
+            width: 100%;
+            text-align: center;
+            padding: 48px 24px 32px;
+            background: var(--bg-base);
+        }
+        .mat-hero h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 1.1;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+        .mat-hero-sub {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+        }
+        .mat-back {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.2rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            z-index: 10;
+        }
+
+        /* Main container */
+        .mat-content {
+            max-width: 960px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+        }
+
+        /* Section header (Kompetenzbereich) */
+        .mat-section {
+            margin-bottom: 32px;
+        }
+        .mat-section-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 20px 0 12px;
+            border-bottom: 2px solid rgba(0,0,0,0.06);
+            margin-bottom: 16px;
+        }
+        .mat-section-icon {
+            font-size: 1.8rem;
+            flex-shrink: 0;
+        }
+        .mat-section-icon img {
+            width: 56px;
+            height: 34px;
+            border-radius: 8px;
+            object-fit: cover;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+        }
+        .mat-section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-main);
+        }
+        .mat-section-subtitle {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        /* Sub-competency card (Teilkompetenz) */
+        .mat-kompetenz {
+            background: #FFFFFF;
+            border: 0.5px solid rgba(0,0,0,0.08);
+            border-radius: 16px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: box-shadow 0.25s;
+        }
+        .mat-kompetenz:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+        .mat-kompetenz-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .mat-kompetenz-header:hover {
+            background: rgba(0,0,0,0.015);
+        }
+        .mat-kompetenz-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+        .mat-kompetenz-emoji {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+        .mat-kompetenz-emoji img {
+            width: 44px;
+            height: 28px;
+            border-radius: 6px;
+            object-fit: cover;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+        }
+        .mat-kompetenz-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .mat-kompetenz-count {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        .mat-kompetenz-chevron {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            transition: transform 0.3s;
+            flex-shrink: 0;
+            margin-left: 12px;
+        }
+        .mat-kompetenz.open .mat-kompetenz-chevron {
+            transform: rotate(90deg);
+        }
+
+        /* Progress indicator */
+        .mat-progress-bar {
+            width: 60px;
+            height: 4px;
+            background: rgba(0,0,0,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+            flex-shrink: 0;
+            margin-left: 12px;
+        }
+        .mat-progress-fill {
+            height: 100%;
+            background: var(--success);
+            border-radius: 2px;
+            transition: width 0.4s;
+        }
+
+        /* LS list (hidden by default) */
+        .mat-ls-list {
+            display: none;
+            padding: 0 20px 16px;
+        }
+        .mat-kompetenz.open .mat-ls-list {
+            display: block;
+        }
+
+        /* Individual LS row */
+        .mat-ls {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .mat-ls:last-child {
+            border-bottom: none;
+        }
+
+        /* LS number circle */
+        .mat-ls-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-base);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            border: 1.5px solid rgba(0,0,0,0.08);
+        }
+        .mat-ls-num.completed {
+            background: var(--success);
+            color: #fff;
+            border-color: var(--success);
+        }
+        .mat-ls-num.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        /* LS content */
+        .mat-ls-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .mat-ls-desc {
+            font-size: 0.88rem;
+            color: var(--text-main);
+            line-height: 1.45;
+            margin-bottom: 8px;
+        }
+        .mat-ls-exam {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent);
+            background: var(--accent-glow);
+            padding: 2px 8px;
+            border-radius: 99px;
+            margin-bottom: 8px;
+        }
+
+        /* LS action buttons row */
+        .mat-ls-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .mat-ls-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            font-family: var(--font-sans);
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.08);
+            background: var(--bg-base);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .mat-ls-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-glow);
+        }
+        .mat-ls-btn--upload {
+            background: rgba(52,199,89,0.08);
+            border-color: rgba(52,199,89,0.2);
+            color: #22863a;
+        }
+        .mat-ls-btn--upload:hover {
+            background: rgba(52,199,89,0.15);
+            border-color: var(--success);
+            color: var(--success);
+        }
+        .mat-ls-btn--feedback {
+            background: rgba(0,113,227,0.06);
+            border-color: rgba(0,113,227,0.15);
+            color: #0071E3;
+        }
+        .mat-ls-btn--feedback:hover {
+            background: rgba(0,113,227,0.12);
+            border-color: #0071E3;
+        }
+
+        /* Upload overlay / modal */
+        .mat-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .mat-modal-overlay.visible {
+            display: flex;
+        }
+        .mat-modal {
+            background: #fff;
+            border-radius: 20px;
+            max-width: 480px;
+            width: 100%;
+            padding: 28px 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .mat-modal h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .mat-modal-sub {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+        .mat-modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .mat-drop-zone {
+            border: 2px dashed rgba(0,0,0,0.12);
+            border-radius: 12px;
+            padding: 32px 16px;
+            text-align: center;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .mat-drop-zone:hover,
+        .mat-drop-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+        }
+        .mat-drop-zone-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        .mat-drop-zone-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .mat-drop-zone-file {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-top: 8px;
+        }
+
+        /* Feedback display card */
+        .mat-feedback-card {
+            background: rgba(0,113,227,0.04);
+            border: 1px solid rgba(0,113,227,0.12);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 8px;
+            display: none;
+        }
+        .mat-feedback-card.visible {
+            display: block;
+        }
+        .mat-feedback-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #0071E3;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 6px;
+        }
+        .mat-feedback-text {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            line-height: 1.55;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .mat-hero {
+                padding: 40px 16px 24px;
+            }
+            .mat-hero h1 {
+                font-size: 1.7rem;
+            }
+            .mat-content {
+                padding: 0 12px 40px;
+            }
+            .mat-kompetenz-header {
+                padding: 14px 14px;
+            }
+            .mat-ls-list {
+                padding: 0 14px 12px;
+            }
+            .mat-ls {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .mat-ls-num {
+                width: 28px;
+                height: 28px;
+                font-size: 0.75rem;
+            }
+            .mat-progress-bar {
+                display: none;
+            }
+            .mat-section-icon img {
+                width: 44px;
+                height: 28px;
+            }
+            .mat-kompetenz-emoji img {
+                width: 36px;
+                height: 24px;
+            }
+            .mat-ls-actions {
+                flex-direction: column;
+            }
+            .mat-ls-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Stagger animation */
+        .mat-kompetenz {
+            opacity: 0;
+            animation: fadeSlideUp 0.4s ease forwards;
+        }
+        .mat-kompetenz:nth-child(1) { animation-delay: 0s; }
+        .mat-kompetenz:nth-child(2) { animation-delay: 0.05s; }
+        .mat-kompetenz:nth-child(3) { animation-delay: 0.1s; }
+        .mat-kompetenz:nth-child(4) { animation-delay: 0.15s; }
+    </style>
+</head>
+<body>
+    <a href="/hub.html" class="mat-back">← Hub</a>
+
+    <section class="mat-hero">
+        <h1>Kompetenzen.</h1>
+        <p class="mat-hero-sub" id="subtitle">Bildungsplan — Lernfortschritte</p>
+    </section>
+
+    <section class="mat-content" id="main-content">
+        <!-- Sections rendered by JS -->
+    </section>
+
+    <!-- Upload Modal -->
+    <div class="mat-modal-overlay" id="upload-modal">
+        <div class="mat-modal">
+            <button class="mat-modal-close" onclick="closeUploadModal()">&times;</button>
+            <h3 id="modal-title">Pflichtaufgabe abgeben</h3>
+            <p class="mat-modal-sub" id="modal-desc">Lade deine bearbeitete Pflichtaufgabe als PDF hoch. Sie wird automatisch korrigiert und du erhältst Feedback.</p>
+
+            <!-- Aufgabenstellung (required) -->
+            <div style="margin-bottom: 14px;">
+                <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">
+                    Aufgabenstellung *
+                </label>
+                <textarea id="aufgabenstellung-input" placeholder="Kopiere hier die Aufgabenstellung hinein (z.B. 'Write a comment on the following statement...')" style="
+                    width:100%; min-height:80px; padding:10px 14px; font-family:var(--font-sans);
+                    font-size:0.85rem; background:rgba(255,255,255,0.6); border:var(--glass-border);
+                    border-radius:var(--radius-sm); color:var(--text-primary); resize:vertical; outline:none;
+                    line-height:1.5;
+                " oninput="checkUploadReady()"></textarea>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">
+                    Ohne Aufgabenstellung kann kein Feedback generiert werden.
+                </div>
+            </div>
+
+            <!-- File upload -->
+            <div class="mat-drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                <div class="mat-drop-zone-icon">📎</div>
+                <div class="mat-drop-zone-text">PDF oder Foto hierher ziehen oder klicken</div>
+                <div class="mat-drop-zone-file" id="file-name" style="display:none;"></div>
+            </div>
+            <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="handleFileSelect(event)">
+
+            <button class="btn btn-primary" id="upload-btn" onclick="submitUpload()" disabled>
+                Abgabe einreichen
+            </button>
+            <div id="upload-status" style="text-align:center;margin-top:12px;font-size:0.82rem;color:var(--text-secondary);"></div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div class="mat-modal-overlay" id="feedback-modal">
+        <div class="mat-modal">
+            <button class="mat-modal-close" onclick="closeFeedbackModal()">&times;</button>
+            <h3 id="fb-modal-title">KI-Feedback</h3>
+            <p class="mat-modal-sub" id="fb-modal-ls"></p>
+            <div id="fb-modal-content" style="font-size:0.9rem;line-height:1.6;color:var(--text-main);">
+                <div class="text-muted text-sm text-center" style="padding:20px;">Lade Feedback...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js?v=6"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/cursor-fx.js"></script>
+    <script>
+        if (!Auth.requireLogin()) { /* redirected */ }
+        const player = Auth.getPlayer();
+
+        // ── Competency Data (Bildungsplan) ──────────────────────────
+        const KOMPETENZEN = [
+            {
+                section: 'Methodenkompetenz',
+                icon: '🧠',
+                subtitle: 'Strategien und Arbeitstechniken',
+                kompetenzen: [
+                    {
+                        name: 'Texterschließung',
+                        emoji: '🔍',
+                        ls: [
+                            'Skimming und Scanning als Grundstrategien anwenden',
+                            'Highlighting, Note-taking und Keywords zur Texterschließung nutzen',
+                            'Strategien kombiniert und textsortenspezifisch anwenden',
+                            'Komplexe Texte eigenständig mit passenden Strategien erschließen'
+                        ]
+                    },
+                    {
+                        name: 'Textproduktion',
+                        emoji: '✍️',
+                        ls: [
+                            'Note-making als Vorbereitung zur Textproduktion nutzen',
+                            'Mind-mapping und Outlining zur Textplanung einsetzen',
+                            'Drafting als Schreibprozess verstehen und anwenden',
+                            'Den gesamten Schreibprozess (Planen, Entwerfen, Überarbeiten) eigenständig steuern'
+                        ]
+                    },
+                    {
+                        name: 'Interaktion',
+                        emoji: '🤝',
+                        ls: [
+                            'Partnerarbeit als Arbeitsform produktiv nutzen',
+                            'In Gruppenarbeit kooperativ und zielgerichtet arbeiten',
+                            'Sprachmittlung (Mediation) als Interaktionsform einsetzen',
+                            'Verschiedene Interaktionsprozesse situationsangemessen gestalten'
+                        ]
+                    },
+                    {
+                        name: 'Medienkompetenz',
+                        emoji: '💻',
+                        ls: [
+                            'Grundlegende Recherche in Internet und anderen Quellen durchführen',
+                            'Präsentationstechniken kennenlernen (Gliederung, Visualisierung)',
+                            'Kritische und vergleichende Recherchen durchführen',
+                            'Einzelpräsentationen selbstverantwortlich vorbereiten und durchführen'
+                        ]
+                    }
+                ]
+            },
+            {
+                section: 'Beherrschung der sprachlichen Mittel',
+                icon: '🗣️',
+                subtitle: 'Phonologie, Lexik und Grammatik',
+                kompetenzen: [
+                    {
+                        name: 'Phonologische Kompetenz',
+                        emoji: '🎙️',
+                        ls: [
+                            'Aussprache und Intonation in vertrauten Kontexten festigen',
+                            'Verschiedenartige Aussprachevarianten der englischen Sprache kennenlernen',
+                            'Aussprache und Intonation nach akzeptierten Standards beherrschen',
+                            'Verschiedene Aussprachevarianten verstehen und einordnen',
+                            'Aussprache situationsangemessen und verständlich einsetzen',
+                            'Verschiedenartige Aussprachevarianten sicher verstehen, eigene Aussprache flüssig und natürlich'
+                        ]
+                    },
+                    {
+                        name: 'Lexikalische Kompetenz',
+                        emoji: '📖',
+                        ls: [
+                            'Vorhandenen Wortschatz (B1) aktivieren und festigen',
+                            'Thematischen Wortschatz systematisch erweitern (Wortfamilien, Kollokationen)',
+                            'Fachwortschatz in Verbindung mit den Themenbereichen der kulturellen Kompetenz aufbauen',
+                            'Aktiven und passiven Wortschatz differenziert einsetzen',
+                            'Wortschatz situations- und registerangemessen verwenden',
+                            'Breiter, differenzierter Wortschatz für allgemeine, wissenschaftliche und berufliche Themen'
+                        ]
+                    },
+                    {
+                        name: 'Grammatische Kompetenz',
+                        emoji: '📐',
+                        ls: [
+                            'Grammatische Strukturen (B1) wiederholen und sichern',
+                            'Typische Fehlerquellen identifizieren und bearbeiten',
+                            'Komplexere grammatische Strukturen erwerben (z.B. Passive Voice, Conditionals)',
+                            'Grammatik kontextbezogen und funktional anwenden',
+                            'Grammatische Strukturen situations- und textsortenangemessen einsetzen',
+                            'Sprache weitgehend korrekt und wirkungsvoll verwenden, grammatische Mittel flexibel einsetzen'
+                        ]
+                    }
+                ]
+            },
+            {
+                section: 'Kommunikative Kompetenz',
+                icon: '💬',
+                subtitle: 'Rezeption, Produktion und Mediation',
+                kompetenzen: [
+                    {
+                        name: 'Hörverstehen',
+                        emoji: '👂',
+                        exam: 'Schriftliche Prüfung: Listening Comprehension',
+                        ls: [
+                            'Einfache, klar gesprochene Aussagen in Standardsprache global verstehen',
+                            'Wesentliche Informationen aus längeren Hörtexten entnehmen, Hauptaussagen erfassen',
+                            'Standpunkte und Einstellungen der Sprechenden in Gesprächen erkennen',
+                            'Aussagen inhaltlich komplexer Texte und Redebeiträge über konkrete Themen verstehen',
+                            'Fachlichen Diskussionen in Spezialgebieten folgen, auch bei abstrakten Themen',
+                            'Komplexe Redebeiträge, Gespräche und Medientexte in Standardsprache verstehen, Informationsgehalt und Sprecherintention differenziert erfassen'
+                        ]
+                    },
+                    {
+                        name: 'Sprechen',
+                        emoji: '🗨️',
+                        exam: 'Mündliche Prüfung / Kommunikationsprüfung',
+                        ls: [
+                            'Sich in vertrauten Alltagssituationen verständlich äußern, einfache Meinungen mit vorgegebenen Redemitteln formulieren',
+                            'Zu allgemeinen Themen zusammenhängend sprechen, eigene Erfahrungen schildern, einfache Begründungen geben',
+                            'An Gesprächen über berufsrelevante und gesellschaftliche Themen aktiv teilnehmen, Standpunkte entwickeln',
+                            'Diskussionen mitgestalten und steuern, auf Gegenargumente reagieren, Kompromisse formulieren',
+                            'Präsentationen angemessen und zielgruppenorientiert durchführen, Visualisierung einsetzen',
+                            'Sich ohne größere Anstrengung an längeren Gesprächen und Debatten beteiligen, den Gang einer Diskussion steuern, Standpunkte überzeugend vertreten'
+                        ]
+                    },
+                    {
+                        name: 'Leseverstehen',
+                        emoji: '📑',
+                        exam: 'Schriftliche Prüfung: Reading Comprehension',
+                        ls: [
+                            'Einfache Sachtexte global verstehen, Hauptaussagen identifizieren (Skimming)',
+                            'In Texten gezielt nach Informationen suchen (Scanning), Schlüsselwörter markieren',
+                            'Komplexere Sachtexte verstehen, unterschiedliche Standpunkte im Text erfassen',
+                            'Textaussagen zusammenfassen, paraphrasieren und mit eigenen Worten wiedergeben',
+                            'Informationen und Argumente aus verschiedenen Texten zusammenführen und vergleichen',
+                            'Komplexe Sach- und Fachtexte eigenständig erschließen, implizite Aussagen erkennen, kritisch bewerten'
+                        ]
+                    },
+                    {
+                        name: 'Schreiben',
+                        emoji: '📝',
+                        exam: 'Schriftliche Prüfung: Text Production',
+                        ls: [
+                            'Kurze, einfache Texte zu vertrauten Themen verfassen (E-Mail, Notizen)',
+                            'Zusammenhängende Texte mit klarer Struktur schreiben (Einleitung, Hauptteil, Schluss)',
+                            'Zu verschiedenen Themen detaillierte Texte verfassen, Informationen und Argumente einbeziehen',
+                            'Argumente aus verschiedenen Quellen zusammenführen, gegeneinander abwägen',
+                            'Adressaten- und situationsgerechte Texte formulieren (formell/informell, Textsortenanforderungen)',
+                            'Klare, detaillierte Texte zu komplexen Themen verfassen, Informationen synthetisieren und wertend Stellung nehmen'
+                        ]
+                    },
+                    {
+                        name: 'Sprachmittlung (Mediation)',
+                        emoji: '🔄',
+                        exam: 'Schriftliche Prüfung: Mediation',
+                        ls: [
+                            'Einfache Informationen sinngemäß von einer Sprache in die andere übertragen (DE→EN) mit Hilfestellungen',
+                            'Alltagssituationen sprachlich vermitteln, wesentliche Inhalte adressatengerecht zusammenfassen',
+                            'Berufsbezogene Informationen angemessen übertragen (EN→DE), Fachbegriffe sinngemäß wiedergeben',
+                            'Zwischen deutsch- und englischsprachigen Quellen bidirektional vermitteln (DE↔EN)',
+                            'Komplexere Inhalte situations- und adressatengerecht übertragen, kulturelle Besonderheiten berücksichtigen',
+                            'In Alltags- und beruflichen Situationen Informationen sinngemäß und sprachlich angemessen in beide Richtungen übertragen, auch bei komplexen Sachverhalten eigenständig vermitteln'
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // ── Render ──────────────────────────────────────────────────
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderIcon(image, emoji) {
+            return '';
+        }
+
+        function renderAll() {
+            const container = document.getElementById('main-content');
+            container.innerHTML = KOMPETENZEN.map(section => {
+                const komps = section.kompetenzen.map((k, ki) => {
+                    const lsRows = k.ls.map((desc, i) => {
+                        const lsNum = i + 1;
+                        const key = slugify(section.section, k.name, lsNum);
+                        const examTag = (k.exam && lsNum === k.ls.length)
+                            ? `<div class="mat-ls-exam">${escapeHtml(k.exam)}</div>`
+                            : '';
+                        return `
+                            <div class="mat-ls" data-key="${key}">
+                                <div class="mat-ls-num" id="num-${key}">${lsNum}</div>
+                                <div class="mat-ls-body">
+                                    ${examTag}
+                                    <div class="mat-ls-desc">${escapeHtml(desc)}</div>
+                                    <div class="mat-ls-actions">
+                                        <button class="mat-ls-btn" data-mat-key="${key}" onclick="downloadMaterial('${key}', ${lsNum})">
+                                            📥 Material LS ${lsNum}
+                                        </button>
+                                        <button class="mat-ls-btn mat-ls-btn--upload" onclick="openUploadModal('${key}', '${escapeHtml(k.name)}', ${lsNum})">
+                                            📤 Pflichtaufgabe abgeben
+                                        </button>
+                                        <button class="mat-ls-btn mat-ls-btn--feedback" onclick="openFeedbackModal('${key}', '${escapeHtml(k.name)}', ${lsNum})" id="fb-btn-${key}" style="display:none;">
+                                            💡 Feedback ansehen
+                                        </button>
+                                    </div>
+                                    <div class="mat-feedback-card" id="fb-${key}"></div>
+                                </div>
+                            </div>`;
+                    }).join('');
+
+                    return `
+                        <div class="mat-kompetenz" id="komp-${slugify(section.section, k.name)}">
+                            <div class="mat-kompetenz-header" onclick="toggleKompetenz(this.parentElement)">
+                                <div class="mat-kompetenz-left">
+                                    <span class="mat-kompetenz-emoji">${renderIcon(k.image, k.emoji)}</span>
+                                    <div>
+                                        <div class="mat-kompetenz-name">${escapeHtml(k.name)}</div>
+                                        <div class="mat-kompetenz-count">${k.ls.length} Lernfortschritte</div>
+                                    </div>
+                                </div>
+                                <div class="mat-progress-bar">
+                                    <div class="mat-progress-fill" style="width: 0%;" id="prog-${slugify(section.section, k.name)}"></div>
+                                </div>
+                                <span class="mat-kompetenz-chevron">›</span>
+                            </div>
+                            <div class="mat-ls-list">${lsRows}</div>
+                        </div>`;
+                }).join('');
+
+                return `
+                    <div class="mat-section">
+                        <div class="mat-section-header">
+                            <span class="mat-section-icon">${renderIcon(section.image, section.icon)}</span>
+                            <div>
+                                <div class="mat-section-title">${escapeHtml(section.section)}</div>
+                                <div class="mat-section-subtitle">${escapeHtml(section.subtitle)}</div>
+                            </div>
+                        </div>
+                        ${komps}
+                    </div>`;
+            }).join('');
+        }
+
+        function slugify(...parts) {
+            return parts.join('-').toLowerCase()
+                .replace(/[äöüß]/g, m => ({ä:'ae',ö:'oe',ü:'ue',ß:'ss'})[m] || m)
+                .replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+        }
+
+        function toggleKompetenz(el) {
+            el.classList.toggle('open');
+        }
+
+        // ── Material availability ──────────────────────────────────
+        let availableMaterials = new Set();
+
+        async function loadMaterialAvailability() {
+            try {
+                const resp = await fetch('/api/materials/admin/list-materials');
+                if (!resp.ok) return;
+                const materials = await resp.json();
+                availableMaterials = new Set(materials.map(m => m.key));
+                // Update button states
+                document.querySelectorAll('.mat-ls-btn[data-mat-key]').forEach(btn => {
+                    const key = btn.dataset.matKey;
+                    if (!availableMaterials.has(key)) {
+                        btn.disabled = true;
+                        btn.style.opacity = '0.35';
+                        btn.style.cursor = 'default';
+                        btn.title = 'Material noch nicht verfügbar';
+                    }
+                });
+            } catch (e) { /* silent */ }
+        }
+
+        // ── Download (opens PDF from server) ────────────────────────
+        function downloadMaterial(key, lsNum) {
+            if (!availableMaterials.has(key)) {
+                alert('Dieses Material ist noch nicht verfügbar. Bitte wende dich an die Lehrkraft.');
+                return;
+            }
+            const url = `/api/materials/${encodeURIComponent(key)}/download`;
+            window.open(url, '_blank');
+        }
+
+        // ── Upload Modal ────────────────────────────────────────────
+        let currentUploadKey = '';
+        let currentUploadFile = null;
+
+        let currentUploadLsNum = 0;
+
+        function openUploadModal(key, kompName, lsNum) {
+            currentUploadKey = key;
+            currentUploadLsNum = lsNum;
+            currentUploadFile = null;
+            document.getElementById('modal-title').textContent = `Pflichtaufgabe — LS ${lsNum}`;
+            document.getElementById('modal-desc').textContent =
+                `${kompName}: Lade deine bearbeitete Pflichtaufgabe hoch. Gib die Aufgabenstellung an, damit automatisch korrigiert werden kann.`;
+            document.getElementById('file-name').style.display = 'none';
+            document.getElementById('file-input').value = '';
+            document.getElementById('aufgabenstellung-input').value = '';
+            document.getElementById('upload-btn').disabled = true;
+            document.getElementById('upload-status').textContent = '';
+            document.getElementById('upload-modal').classList.add('visible');
+        }
+
+        function checkUploadReady() {
+            const hasFile = currentUploadFile !== null;
+            const hasAufgabe = document.getElementById('aufgabenstellung-input').value.trim().length > 10;
+            document.getElementById('upload-btn').disabled = !(hasFile && hasAufgabe);
+        }
+
+        function closeUploadModal() {
+            document.getElementById('upload-modal').classList.remove('visible');
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic'];
+            if (!allowed.includes(file.type) && !file.name.match(/\.(pdf|jpg|jpeg|png|heic)$/i)) {
+                document.getElementById('upload-status').textContent = 'Bitte PDF oder Foto hochladen.';
+                return;
+            }
+            currentUploadFile = file;
+            const fn = document.getElementById('file-name');
+            fn.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+            fn.style.display = 'block';
+            document.getElementById('upload-status').textContent = '';
+            checkUploadReady();
+        }
+
+        // Drag & drop
+        const dropZone = document.getElementById('drop-zone');
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                document.getElementById('file-input').files = e.dataTransfer.files;
+                handleFileSelect({ target: { files: [file] } });
+            }
+        });
+
+        async function submitUpload() {
+            if (!currentUploadFile || !currentUploadKey) return;
+            const aufgabe = document.getElementById('aufgabenstellung-input').value.trim();
+            if (!aufgabe || aufgabe.length < 10) {
+                document.getElementById('upload-status').textContent = 'Bitte die Aufgabenstellung eingeben (mind. 10 Zeichen).';
+                return;
+            }
+
+            const btn = document.getElementById('upload-btn');
+            const status = document.getElementById('upload-status');
+            btn.disabled = true;
+            btn.textContent = 'Wird hochgeladen...';
+            status.textContent = '';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', currentUploadFile);
+                formData.append('playerId', player.id);
+                formData.append('kompetenzKey', currentUploadKey);
+                formData.append('lsNumber', currentUploadLsNum);
+                formData.append('aufgabenstellung', aufgabe);
+
+                const resp = await fetch('/api/materials/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!resp.ok) throw new Error('Upload fehlgeschlagen');
+
+                const result = await resp.json();
+
+                if (result.status === 'completed' && result.feedback) {
+                    status.textContent = 'Feedback erhalten!';
+                    status.style.color = 'var(--success)';
+                    // Show feedback button
+                    const fbBtn = document.getElementById('fb-btn-' + currentUploadKey);
+                    if (fbBtn) fbBtn.style.display = '';
+                } else if (result.status === 'processing') {
+                    status.textContent = 'Hochgeladen! Feedback wird generiert...';
+                    status.style.color = 'var(--success)';
+                } else if (result.status === 'uploaded') {
+                    status.textContent = 'Hochgeladen! (Kein automatisches Feedback ohne Aufgabenstellung)';
+                    status.style.color = 'var(--warning)';
+                } else {
+                    status.textContent = 'Hochgeladen.';
+                    status.style.color = 'var(--success)';
+                }
+
+                setTimeout(closeUploadModal, 2000);
+            } catch (e) {
+                status.textContent = 'Fehler: ' + e.message;
+                status.style.color = 'var(--danger)';
+                btn.disabled = false;
+            }
+            btn.textContent = 'Abgabe einreichen';
+        }
+
+        // ── Feedback Modal ──────────────────────────────────────────
+        function openFeedbackModal(key, kompName, lsNum) {
+            document.getElementById('fb-modal-title').textContent = `Feedback — ${kompName}`;
+            document.getElementById('fb-modal-ls').textContent = `Lernfortschritt ${lsNum}`;
+            document.getElementById('fb-modal-content').innerHTML =
+                '<div class="text-muted text-sm text-center" style="padding:20px;">Lade Feedback...</div>';
+            document.getElementById('feedback-modal').classList.add('visible');
+
+            // Load feedback (placeholder — will use real API)
+            loadFeedback(key);
+        }
+
+        function closeFeedbackModal() {
+            document.getElementById('feedback-modal').classList.remove('visible');
+        }
+
+        async function loadFeedback(key) {
+            try {
+                const resp = await fetch(`/api/materials/${encodeURIComponent(key)}/feedback?playerId=${player.id}`);
+                if (!resp.ok) throw new Error('Kein Feedback vorhanden');
+                const data = await resp.json();
+
+                if (data.status === 'processing') {
+                    document.getElementById('fb-modal-content').innerHTML =
+                        '<div class="text-muted text-sm text-center" style="padding:20px;">Feedback wird noch generiert...</div>';
+                    return;
+                }
+
+                let html = '';
+
+                // Inhalt section
+                if (data.inhalt) {
+                    html += `
+                        <div style="margin-bottom:16px;">
+                            <div style="font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">Inhalt</div>
+                            <div style="padding:12px 14px;background:rgba(224,36,36,0.04);border-radius:10px;font-size:0.85rem;line-height:1.6;white-space:pre-wrap;">${escapeHtml(data.inhalt)}</div>
+                        </div>`;
+                }
+
+                // Sprache section
+                if (data.sprache) {
+                    html += `
+                        <div>
+                            <div style="font-size:0.72rem;font-weight:700;color:#0071E3;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">Sprache</div>
+                            <div style="padding:12px 14px;background:rgba(0,113,227,0.04);border-radius:10px;font-size:0.85rem;line-height:1.6;white-space:pre-wrap;">${escapeHtml(data.sprache)}</div>
+                        </div>`;
+                }
+
+                // Fallback to full text
+                if (!data.inhalt && !data.sprache && data.text) {
+                    html = `<div style="font-size:0.85rem;line-height:1.6;white-space:pre-wrap;">${escapeHtml(data.text)}</div>`;
+                }
+
+                if (!html) {
+                    html = '<div class="text-muted text-sm text-center" style="padding:20px;">Kein Feedback vorhanden.</div>';
+                }
+
+                document.getElementById('fb-modal-content').innerHTML = html;
+            } catch (e) {
+                document.getElementById('fb-modal-content').innerHTML =
+                    `<div class="text-muted text-sm text-center" style="padding:20px;">${escapeHtml(e.message)}</div>`;
+            }
+        }
+
+        // Close modals on overlay click
+        document.querySelectorAll('.mat-modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) overlay.classList.remove('visible');
+            });
+        });
+
+        // ── Load existing submissions ────────────────────────────────
+        async function loadExistingSubmissions() {
+            try {
+                const resp = await fetch(`/api/materials/submissions/${player.id}`);
+                if (!resp.ok) return;
+                const subs = await resp.json();
+                for (const sub of subs) {
+                    if (sub.hasFeedback) {
+                        const fbBtn = document.getElementById('fb-btn-' + sub.kompetenzKey);
+                        if (fbBtn) fbBtn.style.display = '';
+                    }
+                }
+            } catch (e) { /* silent */ }
+        }
+
+        // ── Init ────────────────────────────────────────────────────
+        renderAll();
+        loadMaterialAvailability();
+        loadExistingSubmissions();
+    </script>
+</body>
+</html>

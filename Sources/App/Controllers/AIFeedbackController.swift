@@ -49,7 +49,7 @@ struct AIFeedbackController: RouteCollection {
         let wrongAnswers = session.details?.answers.filter { !$0.correct } ?? []
 
         var prompt = """
-        Du bist ein freundlicher Lernassistent für Schüler (Klasse \(player.klasse)).
+        Du bist ein freundlicher Englisch-Lernassistent für Schüler (Klasse \(player.klasse)).
         Der Schüler \(player.name) hat gerade das Spiel "\(session.module.title)" gespielt.
 
         Ergebnis: \(session.score)/\(session.maxScore) Punkte (\(percentage)%)
@@ -66,16 +66,27 @@ struct AIFeedbackController: RouteCollection {
 
         prompt += """
 
-        Bitte gib dem Schüler:
-        1. Kurzes, ermutigendes Feedback (2-3 Sätze)
-        2. Einen konkreten Lerntipp basierend auf den Fehlern
-        3. Eine Empfehlung, was als nächstes geübt werden sollte
+        Gib dein Feedback ausschließlich in folgender Struktur:
 
-        Antworte auf Deutsch, freundlich und motivierend. Maximal 150 Wörter.
+        --- INHALT ---
+        Was hat der Schüler inhaltlich gut gemacht? Wo gab es Lücken? (2-3 Sätze)
+
+        --- SPRACHE ---
+        Welche sprachlichen Fehler sind aufgefallen? Grammatik, Wortschatz, Rechtschreibung? (2-3 Sätze, mit konkreten Beispielen aus den falschen Antworten)
+
+        --- NÄCHSTER SCHRITT ---
+        Ein konkreter, machbarer Tipp. Was genau sollte als nächstes geübt werden? Schlage wenn möglich eine Übungsart vor (Vokabeltraining, Grammatikübung, Leseübung).
+
+        Antworte auf Deutsch, freundlich und motivierend. Maximal 200 Wörter insgesamt.
         """
 
         // Call AI
         let aiResponse = try await callAI(prompt: prompt, req: req)
+
+        // Parse structured sections
+        let inhalt = extractSection(from: aiResponse.text, marker: "--- INHALT ---", endMarker: "--- SPRACHE ---")
+        let sprache = extractSection(from: aiResponse.text, marker: "--- SPRACHE ---", endMarker: "--- NÄCHSTER SCHRITT ---")
+        let naechsterSchritt = extractSection(from: aiResponse.text, marker: "--- NÄCHSTER SCHRITT ---", endMarker: nil)
 
         // Save feedback
         let feedback = AIFeedback(
@@ -87,13 +98,18 @@ struct AIFeedbackController: RouteCollection {
             scoreBefore: session.score,
             modelUsed: aiResponse.model
         )
+        feedback.feedbackInhalt = inhalt
+        feedback.feedbackSprache = sprache
+        feedback.feedbackNaechsterSchritt = naechsterSchritt
         try await feedback.save(on: req.db)
 
         return AIFeedbackResponse(
             id: feedback.id!,
             feedbackType: "game_review",
             text: aiResponse.text,
-            tips: extractTips(from: aiResponse.text),
+            inhalt: inhalt,
+            sprache: sprache,
+            naechsterSchritt: naechsterSchritt,
             createdAt: feedback.createdAt ?? Date()
         )
     }
@@ -131,15 +147,26 @@ struct AIFeedbackController: RouteCollection {
 
         Statistik: \(input.totalReviewed) Karten geübt, \(input.correctCount) richtig.
 
-        Bitte gib dem Schüler:
-        1. Ermutigendes Feedback (1-2 Sätze)
-        2. Konkrete Merkhilfen/Eselsbrücken für die schwierigen Wörter
-        3. Einen Lerntipp für Vokabeln
+        Gib dein Feedback ausschließlich in folgender Struktur:
 
-        Antworte auf Deutsch, freundlich und motivierend. Maximal 200 Wörter.
+        --- INHALT ---
+        Kurze Einordnung des Ergebnisses. Was lief gut, wo gibt es Lücken? (1-2 Sätze)
+
+        --- SPRACHE ---
+        Konkrete Merkhilfen und Eselsbrücken für die schwierigen Wörter. Nenne die Wörter und gib jeweils eine Merkhilfe. (so viele wie nötig)
+
+        --- NÄCHSTER SCHRITT ---
+        Ein konkreter Tipp für die nächste Vokabel-Übung. Was sollte wiederholt werden?
+
+        Antworte auf Deutsch, freundlich und motivierend. Maximal 200 Wörter insgesamt.
         """
 
         let aiResponse = try await callAI(prompt: prompt, req: req)
+
+        // Parse structured sections
+        let inhalt = extractSection(from: aiResponse.text, marker: "--- INHALT ---", endMarker: "--- SPRACHE ---")
+        let sprache = extractSection(from: aiResponse.text, marker: "--- SPRACHE ---", endMarker: "--- NÄCHSTER SCHRITT ---")
+        let naechsterSchritt = extractSection(from: aiResponse.text, marker: "--- NÄCHSTER SCHRITT ---", endMarker: nil)
 
         let feedback = AIFeedback(
             playerID: player.id!,
@@ -148,13 +175,18 @@ struct AIFeedbackController: RouteCollection {
             aiResponse: aiResponse.text,
             modelUsed: aiResponse.model
         )
+        feedback.feedbackInhalt = inhalt
+        feedback.feedbackSprache = sprache
+        feedback.feedbackNaechsterSchritt = naechsterSchritt
         try await feedback.save(on: req.db)
 
         return AIFeedbackResponse(
             id: feedback.id!,
             feedbackType: "vocab_tip",
             text: aiResponse.text,
-            tips: extractTips(from: aiResponse.text),
+            inhalt: inhalt,
+            sprache: sprache,
+            naechsterSchritt: naechsterSchritt,
             createdAt: feedback.createdAt ?? Date()
         )
     }
@@ -197,7 +229,9 @@ struct AIFeedbackController: RouteCollection {
             id: feedback.id!,
             feedbackType: "general",
             text: aiResponse.text,
-            tips: [],
+            inhalt: nil,
+            sprache: nil,
+            naechsterSchritt: nil,
             createdAt: feedback.createdAt ?? Date()
         )
     }
@@ -218,13 +252,7 @@ struct AIFeedbackController: RouteCollection {
             .all()
 
         return feedbacks.map { fb in
-            AIFeedbackResponse(
-                id: fb.id!,
-                feedbackType: fb.feedbackType,
-                text: fb.aiResponse,
-                tips: extractTips(from: fb.aiResponse),
-                createdAt: fb.createdAt ?? Date()
-            )
+            mapFeedbackResponse(fb)
         }
     }
 
@@ -241,13 +269,7 @@ struct AIFeedbackController: RouteCollection {
             .all()
 
         return feedbacks.map { fb in
-            AIFeedbackResponse(
-                id: fb.id!,
-                feedbackType: fb.feedbackType,
-                text: fb.aiResponse,
-                tips: extractTips(from: fb.aiResponse),
-                createdAt: fb.createdAt ?? Date()
-            )
+            mapFeedbackResponse(fb)
         }
     }
 
@@ -262,13 +284,7 @@ struct AIFeedbackController: RouteCollection {
             throw Abort(.notFound, reason: "Feedback nicht gefunden.")
         }
 
-        return AIFeedbackResponse(
-            id: fb.id!,
-            feedbackType: fb.feedbackType,
-            text: fb.aiResponse,
-            tips: extractTips(from: fb.aiResponse),
-            createdAt: fb.createdAt ?? Date()
-        )
+        return mapFeedbackResponse(fb)
     }
 
     // GET /api/ai/feedback/all
@@ -338,131 +354,41 @@ struct AIFeedbackController: RouteCollection {
         }
     }
 
-    // MARK: - AI Call Helper
+    // MARK: - AI Call Helper (delegates to shared ClaudeService)
 
     private func callAI(prompt: String, req: Request) async throws -> AICallResult {
-        let apiKey = Environment.get("CLAUDE_API_KEY") ?? ""
-        guard !apiKey.isEmpty else {
-            // Fallback: generate basic feedback without AI
-            return AICallResult(
-                text: generateFallbackFeedback(prompt: prompt),
-                model: "fallback-local"
-            )
-        }
-
-        let model = Environment.get("CLAUDE_MODEL") ?? "claude-haiku-4-5-20251001"
-        let maxTokens = Int(Environment.get("CLAUDE_MAX_TOKENS") ?? "500") ?? 500
-
-        // Call Claude API via HTTP
-        let apiURL = URI(string: "https://api.anthropic.com/v1/messages")
-
-        struct ClaudeRequest: Content {
-            let model: String
-            let max_tokens: Int
-            let messages: [ClaudeMessage]
-        }
-
-        struct ClaudeMessage: Content {
-            let role: String
-            let content: String
-        }
-
-        struct ClaudeResponse: Content {
-            let content: [ClaudeContentBlock]
-        }
-
-        struct ClaudeContentBlock: Content {
-            let type: String
-            let text: String?
-        }
-
-        let body = ClaudeRequest(
-            model: model,
-            max_tokens: maxTokens,
-            messages: [ClaudeMessage(role: "user", content: prompt)]
-        )
-
-        var headers = HTTPHeaders()
-        headers.add(name: "x-api-key", value: apiKey)
-        headers.add(name: "anthropic-version", value: "2023-06-01")
-        headers.add(name: "content-type", value: "application/json")
-
-        let response = try await req.client.post(apiURL, headers: headers) { clientReq in
-            try clientReq.content.encode(body)
-        }
-
-        guard response.status == .ok else {
-            let errorBody = response.body.map { String(buffer: $0) } ?? "Unknown error"
-            req.logger.error("Claude API error: \(response.status) - \(errorBody)")
-            // Fallback on API error
-            return AICallResult(
-                text: generateFallbackFeedback(prompt: prompt),
-                model: "fallback-api-error"
-            )
-        }
-
-        let claudeResponse = try response.content.decode(ClaudeResponse.self)
-        let text = claudeResponse.content.compactMap(\.text).joined(separator: "\n")
-
-        return AICallResult(text: text, model: model)
-    }
-
-    // MARK: - Fallback (ohne API-Key)
-
-    private func generateFallbackFeedback(prompt: String) -> String {
-        // Simple rule-based feedback when no API key is configured
-        if prompt.contains("Vokabel") {
-            return """
-            Gut gemacht beim Vokabellernen! 📚
-
-            Tipp: Versuche, die schwierigen Wörter in eigenen Sätzen zu verwenden. \
-            Das hilft dir, sie besser zu behalten. Wiederhole die Wörter, die dir schwer \
-            fallen, am besten morgen noch einmal.
-
-            Weiter so! 💪
-            """
-        }
-
-        if prompt.contains("Punkte") || prompt.contains("Spiel") {
-            return """
-            Toll, dass du geübt hast! 🎮
-
-            Tipp: Schau dir die Fragen, die du falsch hattest, noch einmal genauer an. \
-            Oft hilft es, die richtige Antwort laut auszusprechen. Probiere das Spiel \
-            gleich noch einmal — du wirst sehen, dass du dich verbesserst!
-
-            Du schaffst das! 🌟
-            """
-        }
-
-        return """
-        Danke für deine Frage! 🤗
-
-        Versuche, das Thema in kleinen Schritten zu üben. Wenn du unsicher bist, \
-        frag deine Lehrkraft oder nutze die Übungen hier auf der Plattform.
-
-        Viel Erfolg beim Lernen! ✨
-        """
+        let result = try await ClaudeService.callAI(prompt: prompt, req: req)
+        return AICallResult(text: result.text, model: result.model)
     }
 
     // MARK: - Helpers
 
-    private func extractTips(from text: String) -> [String] {
-        // Extract numbered tips from AI response
-        var tips: [String] = []
-        let lines = text.split(separator: "\n")
-        for line in lines {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            // Match lines starting with numbers (1., 2., 3., etc.) or bullet points
-            if trimmed.first?.isNumber == true && trimmed.contains(".") {
-                let tip = trimmed.drop(while: { $0.isNumber || $0 == "." || $0 == " " })
-                if !tip.isEmpty { tips.append(String(tip)) }
-            } else if trimmed.hasPrefix("-") || trimmed.hasPrefix("•") {
-                let tip = trimmed.dropFirst().trimmingCharacters(in: .whitespaces)
-                if !tip.isEmpty { tips.append(tip) }
-            }
+    private func mapFeedbackResponse(_ fb: AIFeedback) -> AIFeedbackResponse {
+        // Use stored structured fields if available, otherwise parse from raw text
+        let inhalt = fb.feedbackInhalt ?? extractSection(from: fb.aiResponse, marker: "--- INHALT ---", endMarker: "--- SPRACHE ---")
+        let sprache = fb.feedbackSprache ?? extractSection(from: fb.aiResponse, marker: "--- SPRACHE ---", endMarker: "--- NÄCHSTER SCHRITT ---")
+        let naechsterSchritt = fb.feedbackNaechsterSchritt ?? extractSection(from: fb.aiResponse, marker: "--- NÄCHSTER SCHRITT ---", endMarker: nil)
+
+        return AIFeedbackResponse(
+            id: fb.id!,
+            feedbackType: fb.feedbackType,
+            text: fb.aiResponse,
+            inhalt: inhalt.isEmpty ? nil : inhalt,
+            sprache: sprache.isEmpty ? nil : sprache,
+            naechsterSchritt: naechsterSchritt.isEmpty ? nil : naechsterSchritt,
+            createdAt: fb.createdAt ?? Date()
+        )
+    }
+
+    private func extractSection(from text: String, marker: String, endMarker: String?) -> String {
+        guard let startRange = text.range(of: marker) else {
+            return ""
         }
-        return tips
+        let afterStart = text[startRange.upperBound...]
+        if let end = endMarker, let endRange = afterStart.range(of: end) {
+            return String(afterStart[..<endRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return String(afterStart).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

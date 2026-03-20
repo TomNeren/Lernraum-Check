@@ -12,10 +12,18 @@ func routes(_ app: Application) throws {
     try app.register(collection: ChatController())
     try app.register(collection: PDFController())
     try app.register(collection: AIFeedbackController())
+    try app.register(collection: VocabExerciseController())
+    try app.register(collection: BadgeController())
+    try app.register(collection: MaterialController())
 
     // Health-Check
     app.get("api", "health") { req -> String in
-        return "LernSpiel v0.1.0 — OK"
+        return "LernHub v0.2.0 — OK"
+    }
+
+    // Redirect /admin → /admin/index.html (FileMiddleware bedient nur Dateien, nicht Verzeichnisse)
+    app.get("admin") { req -> Response in
+        return req.redirect(to: "/admin/index.html")
     }
 
     // Redirect root zu index.html (wird von FileMiddleware bedient)

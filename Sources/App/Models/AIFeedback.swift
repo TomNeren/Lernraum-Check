@@ -22,6 +22,15 @@ final class AIFeedback: Model, Content, @unchecked Sendable {
     @Field(key: "ai_response")
     var aiResponse: String
 
+    @OptionalField(key: "feedback_inhalt")
+    var feedbackInhalt: String?
+
+    @OptionalField(key: "feedback_sprache")
+    var feedbackSprache: String?
+
+    @OptionalField(key: "feedback_naechster_schritt")
+    var feedbackNaechsterSchritt: String?
+
     @OptionalField(key: "score_before")
     var scoreBefore: Int?
 

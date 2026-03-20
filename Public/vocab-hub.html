@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LernHub — Vokabeltraining</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container container--narrow">
+
+        <!-- Back + Header -->
+        <div style="display: flex; align-items: center; gap: 12px; padding: 16px 0 8px;">
+            <a href="/hub.html" style="font-size: 1.4rem; text-decoration: none; color: var(--text-primary); line-height: 1;">←</a>
+            <div>
+                <h1 style="font-family: var(--font-serif); font-size: 1.5rem; font-weight: 400;">Vokabeltraining</h1>
+                <p class="text-muted text-sm">Wähle eine Übungsart</p>
+            </div>
+        </div>
+
+        <!-- Topic Selector -->
+        <div class="glass-panel" style="margin-bottom: 16px;">
+            <div class="section-title" style="margin-top: 0;">Thema wählen</div>
+            <select id="topic-select" style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.5); border: var(--glass-border); border-radius: var(--radius-sm); font-family: var(--font-sans); font-size: 0.9rem; color: var(--text-primary);">
+                <option value="">Lade Themen...</option>
+            </select>
+        </div>
+
+        <!-- Mode Cards -->
+        <div class="bento-grid">
+            <!-- Karteikarten (existing SRS) -->
+            <a class="bento-card span-2" href="/games/vocab-srs.html" style="--i: 0;">
+                <div>
+                    <div class="bento-card-icon">📚</div>
+                    <div class="bento-card-title">Karteikarten</div>
+                    <div class="bento-card-desc">Klassisches Leitner-System mit Wiederholung</div>
+                </div>
+                <div class="bento-card-badge">
+                    <span class="badge badge-accent">SRS</span>
+                </div>
+            </a>
+
+            <!-- Dialog Exercise (AI) -->
+            <div class="bento-card" onclick="startExercise('dialogue')" style="--i: 1; animation-delay: calc(1 * 0.08s);">
+                <div>
+                    <div class="bento-card-icon">💬</div>
+                    <div class="bento-card-title">Dialog</div>
+                    <div class="bento-card-desc">KI-generierte Dialoge mit Lücken</div>
+                </div>
+                <span class="badge badge-accent" style="align-self: flex-end;">KI</span>
+            </div>
+
+            <!-- Progressive Reveal (AI) -->
+            <div class="bento-card" onclick="startExercise('progressive')" style="--i: 2; animation-delay: calc(2 * 0.08s);">
+                <div>
+                    <div class="bento-card-icon">🔍</div>
+                    <div class="bento-card-title">Wort-Entdecker</div>
+                    <div class="bento-card-desc">Buchstabe für Buchstabe erraten</div>
+                </div>
+                <span class="badge badge-accent" style="align-self: flex-end;">KI</span>
+            </div>
+
+            <!-- Context Text (AI) -->
+            <div class="bento-card span-2" onclick="startExercise('context')" style="--i: 3; animation-delay: calc(3 * 0.08s);">
+                <div>
+                    <div class="bento-card-icon">📖</div>
+                    <div class="bento-card-title">Lückentext</div>
+                    <div class="bento-card-desc">Interessante Texte mit Vokabel-Lücken — KI erstellt spannende Geschichten</div>
+                </div>
+                <span class="badge badge-accent" style="align-self: flex-end;">KI</span>
+            </div>
+        </div>
+
+        <!-- Vocab Stats -->
+        <div id="vocab-stats" class="glass-panel" style="display: none;">
+            <div class="section-title" style="margin-top: 0;">Dein Fortschritt</div>
+            <div style="display: flex; gap: 12px; text-align: center;">
+                <div style="flex: 1;">
+                    <div style="font-size: 1.3rem; font-weight: 700;" id="stat-total">0</div>
+                    <div class="text-muted text-sm">Karten</div>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 1.3rem; font-weight: 700; color: var(--accent);" id="stat-due">0</div>
+                    <div class="text-muted text-sm">Fällig</div>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 1.3rem; font-weight: 700; color: var(--success);" id="stat-mastered">0</div>
+                    <div class="text-muted text-sm">Gemeistert</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="spacer"></div>
+    </div>
+
+    <!-- Exercise Modal -->
+    <div id="exercise-modal" style="display: none; position: fixed; inset: 0; background: var(--bg-base); z-index: 2000; overflow-y: auto;">
+        <div class="container" style="min-height: 100vh;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 16px 0 8px;">
+                <button onclick="closeExercise()" style="font-size: 1.4rem; background: none; border: none; color: var(--text-primary); cursor: pointer; line-height: 1;">←</button>
+                <div>
+                    <h2 id="exercise-title" style="font-family: var(--font-serif); font-size: 1.3rem; font-weight: 400;">Übung</h2>
+                    <p class="text-muted text-sm" id="exercise-subtitle"></p>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div id="exercise-loading" class="glass-panel text-center" style="padding: 40px;">
+                <div style="font-size: 2rem; margin-bottom: 12px;">🤖</div>
+                <div>KI generiert Übung...</div>
+                <div class="text-muted text-sm mt-8">Das kann einen Moment dauern</div>
+            </div>
+
+            <!-- Exercise Content -->
+            <div id="exercise-content" style="display: none;"></div>
+
+            <!-- Result -->
+            <div id="exercise-result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="/js/api.js?v=6"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/cursor-fx.js"></script>
+    <script src="/js/vocab-exercises.js"></script>
+    <script>
+        if (!Auth.requireLogin()) { /* redirected */ }
+
+        const player = Auth.getPlayer();
+
+        // Load topics
+        async function loadTopics() {
+            try {
+                const topics = await API.getVocabTopics();
+                const select = document.getElementById('topic-select');
+                if (topics.length === 0) {
+                    select.innerHTML = '<option value="">Keine Themen vorhanden</option>';
+                    return;
+                }
+                select.innerHTML = topics.map(t =>
+                    `<option value="${t.topic || t}">${t.topic || t} (${t.count || '?'} Wörter)</option>`
+                ).join('');
+            } catch (e) {
+                document.getElementById('topic-select').innerHTML =
+                    '<option value="">Fehler beim Laden</option>';
+            }
+        }
+
+        // Load vocab stats
+        async function loadStats() {
+            try {
+                const stats = await API.getVocabStats(player.id);
+                if (stats.total > 0) {
+                    document.getElementById('vocab-stats').style.display = '';
+                    document.getElementById('stat-total').textContent = stats.total;
+                    document.getElementById('stat-due').textContent = stats.dueToday;
+                    document.getElementById('stat-mastered').textContent = stats.box5 || 0;
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        function startExercise(type) {
+            const topic = document.getElementById('topic-select').value;
+            if (!topic) {
+                alert('Bitte wähle zuerst ein Thema.');
+                return;
+            }
+            VocabExercises.start(type, topic, player);
+        }
+
+        function closeExercise() {
+            document.getElementById('exercise-modal').style.display = 'none';
+        }
+
+        loadTopics();
+        loadStats();
+    </script>
+</body>
+</html>

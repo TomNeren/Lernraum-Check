@@ -24,6 +24,12 @@ Storage/
 *.xcworkspace/
 xcuserdata/
 
+# Logs
+server_output.log
+
+# LernSpiel (separate repo)
+LernSpiel/
+
 # Claude
 .claude/
 swift-5.9.2-RELEASE-ubuntu22.04/

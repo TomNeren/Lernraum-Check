@@ -33,6 +33,10 @@ func configure(_ app: Application) throws {
     app.migrations.add(CreateChatMessage())
     app.migrations.add(CreatePDFDocument())
     app.migrations.add(CreateAIFeedback())
+    app.migrations.add(CreateVocabExercise())
+    app.migrations.add(CreateBadgeTables())
+    app.migrations.add(CreateMaterialTables())
+    app.migrations.add(AddStructuredFeedbackFields())
     try app.autoMigrate().wait()
 
     // --- Middleware ---

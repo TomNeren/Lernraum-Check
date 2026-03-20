@@ -1,5 +1,5 @@
 /**
- * LernSpiel API Client
+ * LernHub API Client
  * Gemeinsamer Fetch-Wrapper für alle Module
  */
 
@@ -343,6 +343,19 @@ const API = {
 
     async testAIConnection() {
         return this.request('POST', '/api/ai/config');
+    },
+
+    // --- Badges ---
+    async getPlayerBadges(playerID) {
+        return this.request('GET', `/api/badges/player/${playerID}`);
+    },
+
+    async checkBadges(playerID) {
+        return this.request('POST', `/api/badges/check/${playerID}`);
+    },
+
+    async getAllBadges() {
+        return this.request('GET', '/api/badges/all');
     },
 
     // --- Health ---

@@ -20,6 +20,10 @@ let package = Package(
                 .product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"),
             ]
         ),
+        .executableTarget(
+            name: "FMBridge",
+            dependencies: []
+        ),
         .testTarget(
             name: "AppTests",
             dependencies: [

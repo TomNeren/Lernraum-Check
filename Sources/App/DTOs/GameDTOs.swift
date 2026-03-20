@@ -405,7 +405,9 @@ struct AIFeedbackResponse: Content {
     var id: UUID
     var feedbackType: String
     var text: String
-    var tips: [String]
+    var inhalt: String?
+    var sprache: String?
+    var naechsterSchritt: String?
     var createdAt: Date
 }
 
@@ -433,4 +435,66 @@ struct AIConfigResponse: Content {
 struct AIConfigTestResult: Content {
     var success: Bool
     var message: String
+}
+
+// MARK: - Vocab Exercise DTOs
+
+struct GenerateExerciseRequest: Content {
+    var topic: String
+    var exerciseType: String  // "dialogue", "progressive", "context"
+    var difficulty: Int       // 1-3
+}
+
+struct VocabExerciseResponse: Content {
+    var id: UUID
+    var exerciseType: String
+    var topic: String
+    var difficulty: Int
+    var content: String  // JSON string with exercise data
+    var modelUsed: String
+    var cached: Bool
+}
+
+struct ExerciseSubmitRequest: Content {
+    var playerID: UUID
+    var exerciseType: String
+    var topic: String
+    var correctCount: Int
+    var totalCount: Int
+    var wrongAnswers: [WrongAnswer]
+}
+
+struct WrongAnswer: Content {
+    var expected: String
+    var given: String
+}
+
+struct ExerciseSubmitResponse: Content {
+    var correctCount: Int
+    var totalCount: Int
+    var feedback: String
+    var modelUsed: String
+}
+
+// MARK: - Badge DTOs
+
+struct BadgeDefinition: Content {
+    var id: UUID
+    var name: String
+    var description: String
+    var icon: String
+    var category: String
+}
+
+struct PlayerBadgeResponse: Content {
+    var id: UUID
+    var name: String
+    var icon: String
+    var description: String
+    var earned: Bool
+    var earnedAt: Date?
+}
+
+struct BadgeCheckResponse: Content {
+    var newBadges: [PlayerBadgeResponse]
 }

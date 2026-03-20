@@ -252,19 +252,20 @@
 
             <!-- Tabs -->
             <div class="tab-bar">
-                <button class="tab-btn active" onclick="switchTab('students')">Schüler</button>
+                <button class="tab-btn active" onclick="switchTab('live')">Live-Ansicht</button>
                 <button class="tab-btn" onclick="switchTab('klassen')">Klassen</button>
-                <button class="tab-btn" onclick="switchTab('live')">Live-Ansicht</button>
-                <button class="tab-btn" onclick="switchTab('games')">Spiele</button>
-                <button class="tab-btn" onclick="switchTab('vocab')">Vokabeln</button>
-                <button class="tab-btn" onclick="switchTab('pdfs')">PDFs</button>
+                <button class="tab-btn" onclick="switchTab('students')">Lernende</button>
                 <button class="tab-btn" onclick="switchTab('ai')">KI-Feedback</button>
+                <button class="tab-btn" onclick="switchTab('vocab')">Vokabeln</button>
+                <button class="tab-btn" onclick="switchTab('games')">Spiele</button>
                 <button class="tab-btn" onclick="switchTab('chat')" id="chat-tab-btn">Chat <span id="chat-unread-badge" style="display: none; background: var(--danger); color: #fff; font-size: 0.65rem; padding: 1px 6px; border-radius: 99px; margin-left: 4px;"></span></button>
                 <button class="tab-btn" onclick="switchTab('templates')">Vorlagen</button>
+                <button class="tab-btn" onclick="switchTab('submissions')">Materialsammlung</button>
+                <button class="tab-btn" onclick="switchTab('prompt')">Feedback-Prompt</button>
             </div>
 
             <!-- Tab: Students -->
-            <div class="tab-content active glass-panel" id="tab-students" style="padding: 16px; margin-top: 16px;">
+            <div class="tab-content glass-panel" id="tab-students" style="padding: 16px; margin-top: 16px;">
                 <div class="filter-bar">
                     <select id="filter-klasse" onchange="renderStudents()">
                         <option value="">Alle Klassen</option>
@@ -355,7 +356,7 @@
             </div>
 
             <!-- Tab: Live View -->
-            <div class="tab-content glass-panel" id="tab-live" style="padding: 16px; margin-top: 16px;">
+            <div class="tab-content active glass-panel" id="tab-live" style="padding: 16px; margin-top: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="section-title">Aktive Schüler (eingecheckt)</div>
                     <button id="checkout-all-btn" class="btn btn-secondary" onclick="forceCheckoutAll()" style="width: auto; padding: 6px 14px; font-size: 0.8rem; display: none;">Alle auschecken</button>
@@ -467,64 +468,6 @@ environment | Umwelt | We must protect our environment."
                 </div>
             </div>
 
-            <!-- Tab: PDFs -->
-            <div class="tab-content glass-panel" id="tab-pdfs" style="padding: 16px; margin-top: 16px;">
-                <div class="section-title">PDF hochladen</div>
-                <div class="card" style="margin-bottom: 20px;">
-                    <div class="input-group">
-                        <label>Titel</label>
-                        <input type="text" id="pdf-title" placeholder="z.B. Arbeitsblatt Unit 3">
-                    </div>
-                    <div class="input-group">
-                        <label>Kategorie</label>
-                        <select id="pdf-category" style="width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.5); border: var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans);">
-                            <option value="arbeitsblatt">Arbeitsblatt</option>
-                            <option value="loesung">Lösung</option>
-                            <option value="material">Material</option>
-                            <option value="test">Test/Klausur</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <div class="input-group" style="flex: 1;">
-                            <label>Klasse (optional)</label>
-                            <select id="pdf-klasse" style="width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.5); border: var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans);">
-                                <option value="">Alle Klassen</option>
-                            </select>
-                        </div>
-                        <div class="input-group" style="flex: 1;">
-                            <label>Fach (optional)</label>
-                            <input type="text" id="pdf-subject" placeholder="z.B. Englisch">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label>Beschreibung (optional)</label>
-                        <input type="text" id="pdf-description" placeholder="Kurze Beschreibung...">
-                    </div>
-                    <div class="input-group">
-                        <label>PDF-Datei</label>
-                        <input type="file" id="pdf-file" accept=".pdf" style="padding: 10px; background: rgba(255,255,255,0.5); border: var(--glass-border); border-radius: var(--radius-sm); width: 100%;">
-                    </div>
-                    <div id="pdf-upload-status" style="margin-bottom: 8px;"></div>
-                    <button class="btn btn-primary" onclick="uploadPDF()">Hochladen</button>
-                </div>
-
-                <div class="section-title">PDF-Bibliothek</div>
-                <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-                    <select id="pdf-filter-category" onchange="loadPDFs()" style="padding: 6px 10px; background: rgba(255,255,255,0.4); border: var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.8rem;">
-                        <option value="">Alle Kategorien</option>
-                        <option value="arbeitsblatt">Arbeitsblätter</option>
-                        <option value="loesung">Lösungen</option>
-                        <option value="material">Material</option>
-                        <option value="test">Tests</option>
-                    </select>
-                    <input type="text" id="pdf-search" placeholder="Suchen..." oninput="loadPDFs()" style="padding: 6px 10px; background: rgba(255,255,255,0.4); border: var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.8rem; flex: 1;">
-                </div>
-                <div id="pdf-list">
-                    <div class="text-muted text-sm text-center" style="padding: 20px;">Lade PDFs...</div>
-                </div>
-                <div id="pdf-stats-bar" style="margin-top: 12px; font-size: 0.75rem; color: var(--text-muted);"></div>
-            </div>
-
             <!-- Tab: AI Feedback -->
             <div class="tab-content glass-panel" id="tab-ai" style="padding: 16px; margin-top: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -536,6 +479,48 @@ environment | Umwelt | We must protect our environment."
                     <div class="text-muted text-sm text-center" style="padding: 20px;">Lade Feedback-Daten...</div>
                 </div>
                 <div id="ai-stats-bar" style="margin-top: 12px; font-size: 0.75rem; color: var(--text-muted);"></div>
+            </div>
+
+            <!-- Tab: Feedback-Prompt -->
+            <div class="tab-content glass-panel" id="tab-prompt" style="padding: 16px; margin-top: 16px;">
+                <div class="section-title">System-Prompt für Materialfeedback</div>
+                <p class="text-muted text-sm mb-12">Dieser Prompt wird bei jeder Pflichtaufgaben-Korrektur als System-Anweisung an das KI-Modell gesendet. Du kannst ihn hier direkt anpassen.</p>
+                <div style="margin-bottom: 12px;">
+                    <textarea id="system-prompt-editor" style="
+                        width: 100%; min-height: 400px; padding: 14px; font-family: 'SF Mono', 'Menlo', monospace;
+                        font-size: 0.82rem; line-height: 1.6; background: rgba(255,255,255,0.6);
+                        border: var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary);
+                        resize: vertical; outline: none;
+                    " placeholder="Lade System-Prompt..."></textarea>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn btn-primary" onclick="saveSystemPrompt()" style="flex: 0 0 auto; width: auto; padding: 10px 24px;">Speichern</button>
+                    <button class="btn btn-secondary" onclick="resetSystemPrompt()" style="flex: 0 0 auto; width: auto; padding: 10px 24px;">Zurücksetzen</button>
+                    <span id="prompt-save-status" style="font-size: 0.8rem; color: var(--text-muted);"></span>
+                </div>
+                <div id="prompt-last-updated" style="margin-top: 8px; font-size: 0.72rem; color: var(--text-muted);"></div>
+            </div>
+
+            <!-- Tab: Abgaben -->
+            <div class="tab-content glass-panel" id="tab-submissions" style="padding: 16px; margin-top: 16px;">
+
+                <!-- Material-Upload für Kompetenzen -->
+                <div class="section-title">Material-PDF hochladen</div>
+                <p class="text-muted text-sm mb-12">Lade hier die Arbeitsblätter/Materialien für jeden Lernfortschritt hoch. Diese werden den Schülern zum Download angeboten.</p>
+                <div id="mat-upload-grid" style="margin-bottom: 20px;">
+                    <!-- Rendered by JS -->
+                </div>
+
+                <hr style="border:none;border-top:1px solid rgba(0,0,0,0.06);margin:20px 0;">
+
+                <!-- Schüler-Abgaben -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div class="section-title" style="margin-bottom: 0;">Pflichtaufgaben-Abgaben</div>
+                    <button class="btn btn-secondary" onclick="loadSubmissions()" style="font-size: 0.75rem; padding: 6px 12px; width: auto;">Aktualisieren</button>
+                </div>
+                <div id="submissions-list">
+                    <div class="text-muted text-sm text-center" style="padding: 20px;">Lade Abgaben...</div>
+                </div>
             </div>
 
             <!-- Tab: Templates -->
@@ -849,7 +834,6 @@ climate change | Klimawandel | Climate change affects everyone.</div>
                 loadKlassen();
                 loadVocabTopics();
                 populateChatKlasseFilter(ov.klassen);
-                populatePDFKlasseFilter(ov.klassen);
                 loadChatMessages();
             } catch (e) {
                 console.error('Dashboard laden fehlgeschlagen:', e);
@@ -1192,11 +1176,15 @@ climate change | Klimawandel | Climate change affects everyone.</div>
                 loadChatMessages();
                 loadChatUnreadCount();
             }
-            if (tabName === 'pdfs') {
-                loadPDFs();
-            }
             if (tabName === 'ai') {
                 loadAIFeedback();
+            }
+            if (tabName === 'prompt') {
+                loadSystemPrompt();
+            }
+            if (tabName === 'submissions') {
+                loadSubmissions();
+                loadExistingMaterials();
             }
         }
 
@@ -1707,117 +1695,6 @@ climate change | Klimawandel | Climate change affects everyone.</div>
         loadChatUnreadCount();
         setInterval(loadChatUnreadCount, 30000);
 
-        // --- PDFs ---
-        async function uploadPDF() {
-            const title = document.getElementById('pdf-title').value.trim();
-            const file = document.getElementById('pdf-file').files[0];
-            const status = document.getElementById('pdf-upload-status');
-
-            if (!title || !file) {
-                status.innerHTML = '<span style="color: var(--danger);">Titel und PDF-Datei erforderlich.</span>';
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('title', title);
-            formData.append('category', document.getElementById('pdf-category').value);
-            formData.append('file', file);
-            const klasse = document.getElementById('pdf-klasse').value;
-            if (klasse) formData.append('klasse', klasse);
-            const subject = document.getElementById('pdf-subject').value.trim();
-            if (subject) formData.append('subject', subject);
-            const desc = document.getElementById('pdf-description').value.trim();
-            if (desc) formData.append('description', desc);
-
-            status.innerHTML = '<span style="color: var(--accent);">Lade hoch...</span>';
-            try {
-                await API.uploadPDF(formData);
-                status.innerHTML = '<span style="color: var(--success);">PDF erfolgreich hochgeladen!</span>';
-                document.getElementById('pdf-title').value = '';
-                document.getElementById('pdf-file').value = '';
-                document.getElementById('pdf-description').value = '';
-                document.getElementById('pdf-subject').value = '';
-                loadPDFs();
-            } catch (e) {
-                status.innerHTML = '<span style="color: var(--danger);">Fehler: ' + esc(e.message) + '</span>';
-            }
-        }
-
-        async function loadPDFs() {
-            const container = document.getElementById('pdf-list');
-            const category = document.getElementById('pdf-filter-category').value;
-            const search = document.getElementById('pdf-search').value.trim();
-
-            try {
-                let pdfs;
-                if (search) {
-                    pdfs = await API.searchPDFs(search);
-                } else if (category) {
-                    pdfs = await API.listPDFsByCategory(category);
-                } else {
-                    pdfs = await API.listPDFs();
-                }
-
-                if (pdfs.length === 0) {
-                    container.innerHTML = '<div class="text-muted text-sm text-center" style="padding: 20px;">Keine PDFs vorhanden</div>';
-                    return;
-                }
-
-                const categoryLabels = { arbeitsblatt: 'Arbeitsblatt', loesung: 'Lösung', material: 'Material', test: 'Test' };
-                container.innerHTML = pdfs.map(pdf => {
-                    const size = pdf.fileSize > 1048576 ? (pdf.fileSize / 1048576).toFixed(1) + ' MB' : (pdf.fileSize / 1024).toFixed(0) + ' KB';
-                    const date = new Date(pdf.createdAt).toLocaleDateString('de-DE');
-                    return `
-                        <div class="card" style="padding: 12px 16px; margin-bottom: 8px;">
-                            <div style="display: flex; justify-content: space-between; align-items: start;">
-                                <div>
-                                    <span style="font-weight: 700; font-size: 0.9rem;">📄 ${esc(pdf.title)}</span>
-                                    <div style="margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap;">
-                                        <span class="badge">${categoryLabels[pdf.category] || pdf.category}</span>
-                                        ${pdf.klasse ? '<span class="badge">' + esc(pdf.klasse) + '</span>' : ''}
-                                        ${pdf.subject ? '<span class="badge">' + esc(pdf.subject) + '</span>' : ''}
-                                        <span style="font-size: 0.7rem; color: var(--text-muted);">${size} · ${date}</span>
-                                    </div>
-                                    ${pdf.description ? '<div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">' + esc(pdf.description) + '</div>' : ''}
-                                </div>
-                                <div style="display: flex; gap: 6px;">
-                                    <a href="${pdf.downloadURL}" target="_blank" style="background: var(--accent); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; text-decoration: none; font-weight: 600;">Download</a>
-                                    <button onclick="deletePDFItem('${pdf.id}')" style="background: none; border: 1px solid var(--danger); color: var(--danger); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Löschen</button>
-                                </div>
-                            </div>
-                        </div>`;
-                }).join('');
-
-                // Load stats
-                const stats = await API.getPDFStats();
-                const totalSize = stats.totalSizeBytes > 1048576 ? (stats.totalSizeBytes / 1048576).toFixed(1) + ' MB' : (stats.totalSizeBytes / 1024).toFixed(0) + ' KB';
-                document.getElementById('pdf-stats-bar').textContent = `${stats.totalDocuments} Dokumente · ${totalSize} Speicher`;
-            } catch (e) {
-                container.innerHTML = '<div class="text-muted text-sm text-center" style="padding: 20px;">Fehler: ' + esc(e.message) + '</div>';
-            }
-        }
-
-        async function deletePDFItem(pdfID) {
-            if (!confirm('PDF wirklich löschen?')) return;
-            try {
-                await API.deletePDF(pdfID);
-                loadPDFs();
-            } catch (e) {
-                alert('Fehler: ' + e.message);
-            }
-        }
-
-        function populatePDFKlasseFilter(klassen) {
-            const select = document.getElementById('pdf-klasse');
-            if (!select) return;
-            klassen.forEach(k => {
-                const opt = document.createElement('option');
-                opt.value = k;
-                opt.textContent = k;
-                select.appendChild(opt);
-            });
-        }
-
         // --- AI Feedback ---
         async function loadAIFeedback() {
             const container = document.getElementById('ai-feedback-list');
@@ -1875,6 +1752,250 @@ climate change | Klimawandel | Climate change affects everyone.</div>
                 }
             } catch (e) {
                 status.innerHTML = '<div style="padding: 8px 12px; background: var(--danger-bg); border-radius: var(--radius-sm); font-size: 0.8rem;">❌ Fehler: ' + esc(e.message) + '</div>';
+            }
+        }
+
+        // --- System Prompt ---
+        let loadedPromptText = '';
+        async function loadSystemPrompt() {
+            try {
+                const resp = await fetch('/api/system-prompt');
+                if (!resp.ok) throw new Error('Fehler beim Laden');
+                const data = await resp.json();
+                loadedPromptText = data.promptText;
+                document.getElementById('system-prompt-editor').value = data.promptText;
+                if (data.updatedAt) {
+                    document.getElementById('prompt-last-updated').textContent =
+                        'Zuletzt geändert: ' + new Date(data.updatedAt).toLocaleString('de-DE');
+                }
+            } catch (e) {
+                document.getElementById('system-prompt-editor').value = 'Fehler beim Laden: ' + e.message;
+            }
+        }
+
+        async function saveSystemPrompt() {
+            const text = document.getElementById('system-prompt-editor').value.trim();
+            const status = document.getElementById('prompt-save-status');
+            if (!text) { status.textContent = 'Prompt darf nicht leer sein.'; return; }
+            try {
+                const resp = await fetch('/api/system-prompt', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ promptText: text })
+                });
+                if (!resp.ok) throw new Error('Speichern fehlgeschlagen');
+                const data = await resp.json();
+                loadedPromptText = data.promptText;
+                status.textContent = 'Gespeichert!';
+                status.style.color = 'var(--success)';
+                if (data.updatedAt) {
+                    document.getElementById('prompt-last-updated').textContent =
+                        'Zuletzt geändert: ' + new Date(data.updatedAt).toLocaleString('de-DE');
+                }
+                setTimeout(() => { status.textContent = ''; }, 2000);
+            } catch (e) {
+                status.textContent = 'Fehler: ' + e.message;
+                status.style.color = 'var(--danger)';
+            }
+        }
+
+        async function resetSystemPrompt() {
+            if (!confirm('System-Prompt auf den Standard zurücksetzen?')) return;
+            try {
+                const resp = await fetch('/api/system-prompt', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ promptText: 'RESET' })
+                });
+                loadSystemPrompt();
+            } catch (e) { alert('Fehler: ' + e.message); }
+        }
+
+        // --- Material Upload ---
+        // --- Material Upload (structured like materials.html) ---
+        const MAT_KOMPETENZEN = [
+            {
+                section: 'Methodenkompetenz',
+                icon: '🧠',
+                kompetenzen: [
+                    { name: 'Texterschließung', emoji: '🔍', key: 'methodenkompetenz-texterschliessung', lsCount: 4,
+                      ls: ['Skimming und Scanning als Grundstrategien anwenden','Highlighting, Note-taking und Keywords zur Texterschließung nutzen','Strategien kombiniert und textsortenspezifisch anwenden','Komplexe Texte eigenständig mit passenden Strategien erschließen'] },
+                    { name: 'Textproduktion', emoji: '✍️', key: 'methodenkompetenz-textproduktion', lsCount: 4,
+                      ls: ['Note-making als Vorbereitung zur Textproduktion nutzen','Mind-mapping und Outlining zur Textplanung einsetzen','Drafting als Schreibprozess verstehen und anwenden','Den gesamten Schreibprozess eigenständig steuern'] },
+                    { name: 'Interaktion', emoji: '🤝', key: 'methodenkompetenz-interaktion', lsCount: 4,
+                      ls: ['Partnerarbeit als Arbeitsform produktiv nutzen','In Gruppenarbeit kooperativ und zielgerichtet arbeiten','Sprachmittlung (Mediation) als Interaktionsform einsetzen','Verschiedene Interaktionsprozesse situationsangemessen gestalten'] },
+                    { name: 'Medienkompetenz', emoji: '💻', key: 'methodenkompetenz-medienkompetenz', lsCount: 4,
+                      ls: ['Grundlegende Recherche in Internet und anderen Quellen durchführen','Präsentationstechniken kennenlernen','Kritische und vergleichende Recherchen durchführen','Einzelpräsentationen selbstverantwortlich vorbereiten und durchführen'] }
+                ]
+            },
+            {
+                section: 'Sprachliche Mittel',
+                icon: '🗣️',
+                kompetenzen: [
+                    { name: 'Phonologische Kompetenz', emoji: '🎙️', key: 'beherrschung-der-sprachlichen-mittel-phonologische-kompetenz', lsCount: 6,
+                      ls: ['Aussprache und Intonation festigen','Aussprachevarianten kennenlernen','Aussprache nach Standards beherrschen','Aussprachevarianten verstehen','Aussprache situationsangemessen einsetzen','Aussprachevarianten sicher verstehen'] },
+                    { name: 'Lexikalische Kompetenz', emoji: '📖', key: 'beherrschung-der-sprachlichen-mittel-lexikalische-kompetenz', lsCount: 6,
+                      ls: ['Wortschatz (B1) aktivieren','Thematischen Wortschatz erweitern','Fachwortschatz aufbauen','Wortschatz differenziert einsetzen','Wortschatz registerangemessen verwenden','Breiter differenzierter Wortschatz'] },
+                    { name: 'Grammatische Kompetenz', emoji: '📐', key: 'beherrschung-der-sprachlichen-mittel-grammatische-kompetenz', lsCount: 6,
+                      ls: ['Grammatische Strukturen (B1) sichern','Fehlerquellen identifizieren','Komplexere Strukturen erwerben','Grammatik kontextbezogen anwenden','Strukturen textsortenangemessen einsetzen','Sprache korrekt und wirkungsvoll verwenden'] }
+                ]
+            },
+            {
+                section: 'Kommunikative Kompetenz',
+                icon: '💬',
+                kompetenzen: [
+                    { name: 'Hörverstehen', emoji: '👂', key: 'kommunikative-kompetenz-hoerverstehen', lsCount: 6,
+                      ls: ['Einfache Aussagen global verstehen','Wesentliche Informationen entnehmen','Standpunkte erkennen','Komplexe Texte verstehen','Fachlichen Diskussionen folgen','Komplexe Redebeiträge differenziert erfassen'] },
+                    { name: 'Sprechen', emoji: '🗨️', key: 'kommunikative-kompetenz-sprechen', lsCount: 6,
+                      ls: ['Sich in Alltagssituationen äußern','Zusammenhängend sprechen','An Gesprächen aktiv teilnehmen','Diskussionen mitgestalten','Präsentationen durchführen','An Debatten beteiligen'] },
+                    { name: 'Leseverstehen', emoji: '📑', key: 'kommunikative-kompetenz-leseverstehen', lsCount: 6,
+                      ls: ['Einfache Sachtexte global verstehen','Gezielt nach Informationen suchen','Komplexere Sachtexte verstehen','Textaussagen zusammenfassen','Informationen aus Texten zusammenführen','Komplexe Texte eigenständig erschließen'] },
+                    { name: 'Schreiben', emoji: '📝', key: 'kommunikative-kompetenz-schreiben', lsCount: 6,
+                      ls: ['Kurze einfache Texte verfassen','Zusammenhängende Texte schreiben','Detaillierte Texte verfassen','Argumente zusammenführen','Adressatengerechte Texte formulieren','Texte zu komplexen Themen verfassen'] },
+                    { name: 'Sprachmittlung', emoji: '🔄', key: 'kommunikative-kompetenz-sprachmittlung-mediation', lsCount: 6,
+                      ls: ['Einfache Informationen übertragen','Alltagssituationen vermitteln','Berufsbezogene Informationen übertragen','Bidirektional vermitteln','Komplexere Inhalte übertragen','Eigenständig vermitteln'] }
+                ]
+            }
+        ];
+
+        // Track which materials are already uploaded
+        let existingMaterialKeys = new Set();
+
+        function renderMatUploadGrid() {
+            const container = document.getElementById('mat-upload-grid');
+            container.innerHTML = MAT_KOMPETENZEN.map(section => {
+                const komps = section.kompetenzen.map(k => {
+                    const lsRows = k.ls.map((desc, i) => {
+                        const lsNum = i + 1;
+                        const fullKey = k.key + '-' + lsNum;
+                        const hasFile = existingMaterialKeys.has(fullKey);
+                        return `
+                            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04);font-size:0.82rem;" id="mat-row-${fullKey}">
+                                <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0;border:1.5px solid ${hasFile ? 'var(--success)' : 'rgba(0,0,0,0.08)'};background:${hasFile ? 'var(--success)' : 'var(--bg-base)'};color:${hasFile ? '#fff' : 'var(--text-secondary)'};">
+                                    ${hasFile ? '✓' : lsNum}
+                                </div>
+                                <div style="flex:1;min-width:0;color:var(--text-main);line-height:1.4;">${esc(desc)}</div>
+                                <div style="flex-shrink:0;display:flex;gap:6px;align-items:center;">
+                                    ${hasFile ? '<span style="font-size:0.72rem;color:var(--success);font-weight:600;">Vorhanden</span>' : ''}
+                                    <label style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:0.72rem;font-weight:600;border-radius:6px;border:1px solid rgba(0,0,0,0.08);background:var(--bg-base);color:var(--text-primary);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='rgba(0,0,0,0.08)';this.style.color='var(--text-primary)'">
+                                        📤 ${hasFile ? 'Ersetzen' : 'Hochladen'}
+                                        <input type="file" accept=".pdf" style="display:none;" onchange="uploadMaterialForLS('${fullKey}', this)">
+                                    </label>
+                                </div>
+                            </div>`;
+                    }).join('');
+
+                    const uploadedCount = k.ls.reduce((n, _, i) => n + (existingMaterialKeys.has(k.key + '-' + (i+1)) ? 1 : 0), 0);
+
+                    return `
+                        <div class="card" style="margin-bottom:8px;overflow:hidden;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;user-select:none;" onclick="toggleMatCard(this.parentElement)">
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <span style="font-size:1.2rem;">${k.emoji}</span>
+                                    <div>
+                                        <div style="font-weight:600;font-size:0.92rem;color:var(--text-main);">${esc(k.name)}</div>
+                                        <div style="font-size:0.72rem;color:var(--text-secondary);">${uploadedCount}/${k.lsCount} Materialien</div>
+                                    </div>
+                                </div>
+                                <span style="font-size:0.85rem;color:var(--text-secondary);transition:transform 0.3s;" class="mat-chev">›</span>
+                            </div>
+                            <div class="mat-ls-panel" style="display:none;padding:0 16px 12px;">
+                                ${lsRows}
+                            </div>
+                        </div>`;
+                }).join('');
+
+                return `
+                    <div style="margin-bottom:20px;">
+                        <div style="display:flex;align-items:center;gap:10px;padding:12px 0 8px;border-bottom:2px solid rgba(0,0,0,0.06);margin-bottom:10px;">
+                            <span style="font-size:1.4rem;">${section.icon}</span>
+                            <div style="font-size:1.05rem;font-weight:700;color:var(--text-main);">${esc(section.section)}</div>
+                        </div>
+                        ${komps}
+                    </div>`;
+            }).join('');
+
+            // Add toggle CSS for open state
+            document.querySelectorAll('.mat-open .mat-ls-panel').forEach(p => p.style.display = 'block');
+        }
+
+        function toggleMatCard(card) {
+            const panel = card.querySelector('.mat-ls-panel');
+            const chev = card.querySelector('.mat-chev');
+            const isOpen = panel.style.display === 'block';
+            panel.style.display = isOpen ? 'none' : 'block';
+            if (chev) chev.style.transform = isOpen ? '' : 'rotate(90deg)';
+        }
+
+        async function uploadMaterialForLS(key, input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const row = document.getElementById('mat-row-' + key);
+            const origHTML = row.querySelector('label').innerHTML;
+            row.querySelector('label').innerHTML = '⏳ Lädt...';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('key', key);
+
+                const resp = await fetch('/api/materials/admin/upload-material', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({ reason: 'Upload fehlgeschlagen' }));
+                    throw new Error(err.reason || 'Upload fehlgeschlagen');
+                }
+                existingMaterialKeys.add(key);
+                renderMatUploadGrid();
+                // Re-open the section that was open
+            } catch (e) {
+                row.querySelector('label').innerHTML = origHTML;
+                alert('Fehler: ' + e.message);
+            }
+            input.value = '';
+        }
+
+        async function loadExistingMaterials() {
+            try {
+                const resp = await fetch('/api/materials/admin/list-materials');
+                if (!resp.ok) throw new Error('Fehler');
+                const materials = await resp.json();
+                existingMaterialKeys = new Set(materials.map(m => m.key || m.name?.replace('.pdf', '') || ''));
+            } catch (e) { /* silent */ }
+            renderMatUploadGrid();
+        }
+
+        // --- Submissions ---
+        async function loadSubmissions() {
+            const container = document.getElementById('submissions-list');
+            try {
+                const resp = await fetch('/api/materials/admin/submissions');
+                if (!resp.ok) throw new Error('Fehler beim Laden');
+                const subs = await resp.json();
+                if (subs.length === 0) {
+                    container.innerHTML = '<div class="text-muted text-sm text-center" style="padding: 20px;">Noch keine Abgaben.</div>';
+                    return;
+                }
+                const statusIcon = { uploaded: '📤', processing: '⏳', completed: '✅', error: '❌' };
+                container.innerHTML = '<table class="data-table"><thead><tr>' +
+                    '<th>Status</th><th>Schüler</th><th>Klasse</th><th>Kompetenz</th><th>LS</th><th>Datei</th><th>Feedback</th><th>Datum</th>' +
+                    '</tr></thead><tbody>' +
+                    subs.map(s => `<tr>
+                        <td>${statusIcon[s.status] || '?'} ${s.status}</td>
+                        <td>${esc(s.playerName)}</td>
+                        <td>${esc(s.klasse)}</td>
+                        <td style="font-size:0.75rem;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(s.kompetenzKey)}">${esc(s.kompetenzKey)}</td>
+                        <td>${s.lsNumber}</td>
+                        <td style="font-size:0.75rem;">${esc(s.fileName)}</td>
+                        <td>${s.hasFeedback ? '✅' : '—'}</td>
+                        <td style="font-size:0.72rem;">${new Date(s.createdAt).toLocaleString('de-DE')}</td>
+                    </tr>`).join('') +
+                    '</tbody></table>';
+            } catch (e) {
+                container.innerHTML = '<div class="text-muted text-sm text-center" style="padding: 20px;">Fehler: ' + esc(e.message) + '</div>';
             }
         }
 

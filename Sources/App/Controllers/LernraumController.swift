@@ -18,6 +18,11 @@ struct LernraumController: RouteCollection {
     func checkin(req: Request) async throws -> LernraumCheckin {
         let input = try req.content.decode(CheckinRequest.self)
 
+        // Spieler muss existieren
+        guard try await Player.find(input.playerID, on: req.db) != nil else {
+            throw Abort(.notFound, reason: "Spieler nicht gefunden. Bitte neu anmelden.")
+        }
+
         // Bestehenden aktiven Check-in schließen
         if let aktiv = try await LernraumCheckin.query(on: req.db)
             .filter(\.$player.$id == input.playerID)
@@ -36,6 +41,11 @@ struct LernraumController: RouteCollection {
     @Sendable
     func updateRaum(req: Request) async throws -> LernraumCheckin {
         let input = try req.content.decode(CheckinRequest.self)
+
+        // Spieler muss existieren
+        guard try await Player.find(input.playerID, on: req.db) != nil else {
+            throw Abort(.notFound, reason: "Spieler nicht gefunden. Bitte neu anmelden.")
+        }
 
         // Aktuellen Check-in schließen
         if let aktiv = try await LernraumCheckin.query(on: req.db)
